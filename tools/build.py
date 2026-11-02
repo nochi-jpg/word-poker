@@ -9,7 +9,7 @@ import base64, json, pathlib, re
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 GAME = ROOT / "game"
-MIME = {".webp": "image/webp", ".jpg": "image/jpeg", ".png": "image/png", ".woff2": "font/woff2"}
+MIME = {".webp": "image/webp", ".jpg": "image/jpeg", ".png": "image/png", ".woff2": "font/woff2", ".mp3": "audio/mpeg"}
 
 def data_uri(p):
     return f"data:{MIME[p.suffix]};base64," + base64.b64encode(p.read_bytes()).decode()

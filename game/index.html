@@ -11,16 +11,22 @@
  <div id="gl"></div><div id="vig"></div>
  <img id="bg2d" alt=""><img id="chara2d" alt="">
 
- <!-- タイトル -->
- <section id="scr-title" class="scr dots">
-  <div class="band" style="top:470px"></div>
+ <!-- タイトル（動く背景・シルエットの相手） -->
+ <section id="scr-title" class="scr">
+  <div class="tbg" id="bgStripe"></div>
+  <div class="ticker" style="top:520px">KOTOBA POKER ことばポーカー KOTOBA POKER ことばポーカー KOTOBA POKER ことばポーカー KOTOBA POKER ことばポーカー </div>
+  <div class="ticker b" style="top:640px">SUBJECT PREDICATE MODIFIER SUBJECT PREDICATE MODIFIER SUBJECT PREDICATE MODIFIER SUBJECT PREDICATE MODIFIER </div>
+  <div class="tbg" id="bgRed"></div><div class="tbg" id="bgRed2"></div>
+  <div id="sweep"></div>
+  <div id="sil"><div class="ln" style="top:200px"></div><div class="ln" style="top:330px"></div><div class="ln" style="top:460px"></div><img id="silImg" alt=""></div>
+  <div id="tflash"></div>
   <img id="logo" alt="ことばポーカー" data-box>
   <div id="menu">
-   <button class="pbtn" data-box data-act="play">プレイ</button>
-   <button class="pbtn" data-box data-act="howto">あそびかた</button>
-   <button class="pbtn" data-box data-act="story">おはなし</button>
-   <button class="pbtn" data-box data-act="best">ハイスコア</button>
-   <button class="pbtn" data-box data-act="opt">オプション</button>
+   <button class="mb" data-box data-act="play"><span>プレイ</span></button>
+   <button class="mb" data-box data-act="howto"><span>あそびかた</span></button>
+   <button class="mb" data-box data-act="story"><span>おはなし</span></button>
+   <button class="mb" data-box data-act="best"><span>ハイスコア</span></button>
+   <button class="mb" data-box data-act="opt"><span>オプション</span></button>
   </div>
   <div id="sign" data-box>作：K.nom</div>
  </section>
@@ -28,49 +34,65 @@
  <!-- 学年選択 -->
  <section id="scr-grade" class="scr dots">
   <div class="band" style="top:96px;height:90px"></div>
-  <div id="gTitle" class="htitle" data-box>学年を えらぶ</div>
+  <div id="gTitle" class="htitle si" data-box>学年を えらぶ</div>
   <div id="gList"></div>
-  <button class="pbtn sm" id="gBack" data-box>もどる</button>
+  <button class="pbtn sm si" id="gBack" data-box>もどる</button>
+  <button class="pbtn sm red si" id="gHard" data-box>ハード</button>
+  <div id="spot"></div>
  </section>
 
  <!-- 対戦 -->
  <section id="battle" class="scr">
-  <div class="hud" id="hDealer" data-box>ディーラー 1 / 4</div>
-  <div class="hud white" id="hStars" data-box></div>
-  <div class="hud white" id="hSwap" data-box><span>入れかえ のこり</span><b id="swapN">8</b></div>
-  <button class="hud btn" id="hPause" data-box>中断</button>
+  <div id="swapFx"><div class="sbar"><div class="stx"></div></div></div>
+  <div class="hud si" id="hDealer" data-box>ステージ 1 / 4</div>
+  <div class="hud white si" id="hStars" data-box></div>
+  <div class="hud white si" id="hSwap" data-box><span>入れかえ のこり</span><b id="swapN">4</b></div>
+  <button class="hud btn si" id="hDeck" data-box>デッキ</button>
+  <button class="hud btn si" id="hPause" data-box>中断</button>
   <div id="sel">
-   <div id="pv" data-box><span class="pvl">いまの文</span><span class="pvt fit" id="pvText"></span></div>
-   <div id="pvScore" data-box></div>
+   <div id="pv" class="si" data-box><span class="pvl">いまの文</span><span class="pvt fit" id="pvText"></span></div>
+   <div id="pvScore" class="si" data-box></div>
    <div id="slots"></div>
    <div class="band dark" style="top:588px;left:-40px;width:1450px;height:240px;transform:rotate(-2deg)"></div>
    <div id="hand"></div>
-   <button class="pbtn act" id="bSwap" data-box>入れかえ</button>
-   <button class="pbtn act red" id="bGo" data-box>決定！</button>
-   <div id="hint" data-box></div>
+   <button class="pbtn act si" id="bSwap" data-box>入れかえ</button>
+   <button class="pbtn act red si" id="bGo" data-box>決定！</button>
+   <div id="hint" class="si" data-box></div>
+  </div>
+  <!-- 点数の計算（3Dの上に重ねる赤いパネル） -->
+  <div id="judge">
+   <div class="jrow" id="jD"><div class="jwho" data-box>あいて</div><div class="jcards"></div><div class="jcalc"><div class="jf" data-box></div><div class="jp" data-box></div></div></div>
+   <div class="jrow" id="jP"><div class="jwho" data-box>あなた</div><div class="jcards"></div><div class="jcalc"><div class="jf" data-box></div><div class="jp" data-box></div></div></div>
+   <div id="jBurst"><div class="jbt" data-box></div><div class="jbs" data-box></div></div>
+   <div id="jBand" data-box><span class="jtag">判定</span><span class="jtx"></span></div>
   </div>
  </section>
 
  <!-- ショップのカード選び -->
  <section id="shopPick" class="scr">
-  <div id="spTitle" class="htitle" data-box>カードを えらぶ（1〜4まい）</div>
+  <div id="spTitle" class="htitle si" data-box>カードを えらぶ（1〜4まい）</div>
   <div id="spCards"></div>
-  <div id="spInfo" data-box></div>
-  <button class="pbtn red" id="spOk" data-box>これにする</button>
+  <div id="spInfo" class="si" data-box></div>
+  <button class="pbtn red si" id="spOk" data-box>これにする</button>
+  <button class="pbtn si" id="spDeck" data-box>いまのデッキ</button>
  </section>
 
  <!-- クリア -->
  <section id="result" class="scr dots">
   <div class="band" style="top:60px;height:110px"></div>
-  <div id="rTitle" class="htitle big" data-box>クリア！</div>
+  <div id="rTitle" class="htitle big si" data-box>クリア！</div>
   <div id="rRows"></div>
-  <div id="rRank" data-box></div>
-  <div id="rNote" data-box></div>
-  <button class="pbtn red" id="rOk" data-box>タイトルへ</button>
+  <div id="rRank" class="si" data-box></div>
+  <div id="rNote" class="si" data-box></div>
+  <button class="pbtn red si" id="rOk" data-box>つぎへ</button>
  </section>
 
- <div id="cutin"><div class="ci-band2"></div><div class="ci-band"></div><img id="ciImg" alt=""><div id="ciText"><div id="ciRole"></div><div id="ciName"></div></div></div>
+ <div id="cutin"><div class="ci-band2"></div><div class="ci-band"></div><img id="ciImg" alt=""><div class="ci-foot"></div>
+  <div id="ciText"><div id="ciNick"></div><div id="ciName"></div><div id="ciRole"></div></div></div>
  <div id="stamp"></div>
+
+ <!-- スタッフロール -->
+ <div id="roll"><img id="rollL" class="rside" alt=""><img id="rollR" class="rside" alt=""><div id="rollIn"></div></div>
 
  <!-- 文字ウインドウ（逆転裁判風） -->
  <div id="msg">
@@ -78,6 +100,9 @@
   <div id="mBody"><div id="mText"></div><div id="mChoices"></div><div id="mNext"></div></div>
  </div>
  <button class="hud btn" id="skipBtn">スキップ</button>
+
+ <!-- 暗転 -->
+ <div id="fade"><div id="fadeTx"></div></div>
 
  <!-- ポップアップ（ボタンでページ切り替え） -->
  <div id="pop"><div id="popBox">
@@ -89,9 +114,11 @@
 </div>
 
 <script src="vendor/three.min.js"></script>
+<script src="js/yomi.js"></script>
 <script src="js/data.js"></script>
 <script src="js/logic.js"></script>
 <script src="js/save.js"></script>
+<script src="js/sound.js"></script>
 <script src="js/stage3d.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/story.js"></script>

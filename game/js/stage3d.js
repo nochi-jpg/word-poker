@@ -1,4 +1,4 @@
-// ことばポーカー：3Dの教室（カキワリ）・ポーカー台・ディーラー・カード・カメラ
+// ことばポーカー：3Dの教室（カキワリ）・ポーカー台・あいて・カード・カメラ
 (function (KP) {
   KP.asset = p => (window.KP_ASSETS && window.KP_ASSETS[p]) || p;
   KP.COLOR = { S: ["#d7141f", "#fff"], M: ["#f2b705", "#111"], P: ["#1e4fd8", "#fff"], N: ["#3dd27a", "#111"] };
@@ -15,6 +15,11 @@
     return t;
   }
 
+  function shadowTex() {
+    const cv = document.createElement("canvas"); cv.width = cv.height = 128; const g = cv.getContext("2d");
+    const gr = g.createRadialGradient(64, 64, 8, 64, 64, 64); gr.addColorStop(0, "rgba(0,0,0,.95)"); gr.addColorStop(.6, "rgba(0,0,0,.75)"); gr.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(cv);
+  }
   S3.init = function (holder, lite) {
     S3.lite = !!lite;
     renderer = new THREE.WebGLRenderer({ antialias: !lite });
@@ -46,6 +51,11 @@
     const felt = new THREE.Mesh(new THREE.BoxGeometry(2.3, .08, 1.5), [chipMat, chipMat, feltMat, chipMat, chipMat, chipMat]); felt.position.y = .78; table.add(felt);
     const rim = new THREE.Mesh(new THREE.BoxGeometry(2.45, .1, 1.65), chipMat); rim.position.y = .74; table.add(rim);
     for (const [x, z] of [[-1.05, -.65], [1.05, -.65], [-1.05, .65], [1.05, .65]]) { const l = new THREE.Mesh(new THREE.BoxGeometry(.12, .74, .12), legMat); l.position.set(x, .37, z); table.add(l); }
+    // 机の下の濃い影：あいての足元をかくして、浮いて見えないようにする
+    const under = new THREE.Mesh(new THREE.BoxGeometry(2.36, .7, 1.56), new THREE.MeshBasicMaterial({ color: 0x050303, transparent: true, opacity: .93 }));
+    under.position.y = .36; table.add(under);
+    const floorSh = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 2.8), new THREE.MeshBasicMaterial({ map: shadowTex(), transparent: true, depthWrite: false }));
+    floorSh.rotation.x = -Math.PI / 2; floorSh.position.set(0, .005, -.3); table.add(floorSh);
     // ディーラー（立ち絵は全員398×655・足元そろえ）
     const DH = 2.15, DW = DH * 398 / 655;
     dealer = new THREE.Mesh(new THREE.PlaneGeometry(DW, DH), new THREE.MeshBasicMaterial({ transparent: true, alphaTest: .05 }));
@@ -58,16 +68,23 @@
     renderer.setSize(w, h, false); renderer.domElement.style.width = "1366px"; renderer.domElement.style.height = "768px";
   };
 
-  // ---- ディーラー ----
+  // ---- あいて ----
   S3.setDealer = function (id) {
     moods = {}; dealer.visible = !!id; if (!id) return;
-    if (id === "shop") { moods.基本 = loader().load(KP.asset("assets/chara/shop_0.webp")); dealer.position.y = dealer.userData.y0 - .25; dealer.userData.yy = -.25; }
+    if (id === "shop") { moods.基本 = loader().load(KP.asset("assets/chara/shop_0.webp")); dealer.userData.yy = -.04; }
     else { Object.entries(POSE).forEach(([m, k]) => { moods[m] = loader().load(KP.asset(`assets/chara/${id}_${k}.webp`)); }); dealer.userData.yy = 0; }
     S3.mood("基本");
   };
   S3.mood = m => { const t = moods[m] || moods.基本; if (!t) return; dealer.material.map = t; dealer.material.needsUpdate = true; };
   S3.showTable = v => { table.visible = v; };
   S3.showDealer = v => { dealer.visible = v; };
+  // おはなし：ポーカー台なしで、ひざ下を文字ウインドウでかくす位置に立たせる
+  S3.storyY = .12; S3.storyMode = v => { S3.story = !!v; };
+  // あいての顔が画面のどこにあるか（点数パネルを顔にかぶせないため）
+  S3.faceAt = function () {
+    const p = V(dealer.position.x, dealer.position.y + .75, dealer.position.z).project(cam);
+    return { x: (p.x + 1) / 2 * 1366, y: (1 - p.y) / 2 * 768 };
+  };
 
   // ---- ステージごとの照明 ----
   const LIGHTS = [
@@ -75,6 +92,7 @@
     { tint: [1, .82, .66], amb: .5, lamp: 1.6, vig: "rgba(60,20,0,.35)" },
     { tint: [.45, .52, .75], amb: .35, lamp: 1.8, vig: "rgba(0,0,20,.6)" },
     { tint: [.75, .3, .32], amb: .3, lamp: 2.2, vig: "rgba(30,0,0,.7)" },
+    { tint: [.32, .1, .14], amb: .15, lamp: .9, vig: "rgba(0,0,0,.92)" }, // ステージ？：あかりが きえた教室
   ];
   S3.light = function (i, vigEl) {
     const L = LIGHTS[i];
@@ -88,14 +106,25 @@
   // ---- カード（3D） ----
   const mctx = document.createElement("canvas").getContext("2d");
   const FONT = '"KPDela","KPMaru",sans-serif';
-  function fitFs(words) { let f = 64; const ok = w => { mctx.font = `${f}px ${FONT}`; return mctx.measureText(w).width <= 220; }; while (f > 20 && !words.every(ok)) f -= 2; return f; }
+  function fitFs(words) { let f = 60; const ok = w => { mctx.font = `${f}px ${FONT}`; return mctx.measureText(w).width <= 220; }; while (f > 20 && !words.every(ok)) f -= 2; return f; }
+  // ふりがなつきで1行を書く（漢字の上に小さな読み）
+  KP.drawRuby = function (g, text, cx, cy, fs, color, font = FONT) {
+    const toks = KP.rbTokens(text); g.font = `${fs}px ${font}`;
+    const ws = toks.map(k => g.measureText(k.t).width), W = ws.reduce((a, b) => a + b, 0);
+    let x = cx - W / 2; g.textBaseline = "middle"; g.textAlign = "left"; g.fillStyle = color;
+    toks.forEach((k, i) => {
+      g.font = `${fs}px ${font}`; g.fillText(k.t, x, cy);
+      if (k.r) { const rf = Math.max(14, Math.round(fs * .34)); g.font = `${rf}px "KPMaru",sans-serif`; g.textAlign = "center"; g.fillText(k.r, x + ws[i] / 2, cy - fs * .5 - rf * .55, Math.max(ws[i] + rf * .9, ws[i] * 1.15)); g.textAlign = "left"; }
+      x += ws[i];
+    });
+  };
   function cardTex(c, fs) {
     const cv = document.createElement("canvas"); cv.width = 256; cv.height = 360; const g = cv.getContext("2d");
     const [band, ink] = KP.COLOR[c.r];
     g.fillStyle = "#fff"; g.fillRect(0, 0, 256, 360); g.strokeStyle = "#111"; g.lineWidth = 12; g.strokeRect(6, 6, 244, 348);
     g.fillStyle = band; g.fillRect(12, 12, 232, 64);
     g.fillStyle = ink; g.font = `40px ${FONT}`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(KP.ROLE[c.r], 128, 46);
-    g.fillStyle = "#111"; g.font = `${fs}px ${FONT}`; g.fillText(c.w, 128, 214);
+    KP.drawRuby(g, c.w, 128, 224, fs, "#111");
     return new THREE.CanvasTexture(cv);
   }
   let backTex = null;
@@ -105,7 +134,6 @@
     g.fillStyle = "#b0101a"; g.fillRect(0, 0, 256, 360);
     g.strokeStyle = "rgba(0,0,0,.35)"; g.lineWidth = 10; for (let i = -360; i < 360; i += 34) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 360, 360); g.stroke(); }
     g.strokeStyle = "#fff"; g.lineWidth = 12; g.strokeRect(6, 6, 244, 348);
-    g.fillStyle = "#111"; g.fillRect(64, 140, 128, 80); g.fillStyle = "#fff"; g.font = `44px ${FONT}`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("ことば", 128, 181);
     return backTex = new THREE.CanvasTexture(cv);
   }
   function makeCard(c, fs, x, z, sc) {
@@ -125,27 +153,39 @@
   S3.bounce = list => S3.tween(500, t => list.forEach((m, i) => { m.position.y = .83 + Math.max(0, Math.sin(Math.PI * Math.min(1, t * 1.6 - i * .08))) * .12; }));
   S3.burst = list => S3.tween(900, t => list.forEach((m, i) => {
     const e = ease(t), dir = (i % 2 ? 1 : -1);
-    m.position.x = m.userData.x + dir * e * (.2 + i * .05); m.position.z = m.userData.z + e * .25; m.rotation.y = Math.PI + dir * e * 1.2; m.position.y = .83 + Math.sin(Math.PI * Math.min(1, t * 2)) * .15;
+    m.position.x = m.userData.x + dir * e * (.2 + i * .05); m.position.z = m.userData.z + e * .25; m.rotation.y = Math.PI + dir * e * 1.2; m.position.y = .83 + i * .007 * e + Math.sin(Math.PI * Math.min(1, t * 2)) * .15;
   }));
   S3.clear = () => cards.splice(0).forEach(m => { scene.remove(m); m.geometry.dispose(); });
 
   // ---- カメラ ----
+  // center＝正面（対面）／sel＝カード選択（左に寄る）／top＝俯瞰／story＝おはなし（ポーカー台なし）
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const A = {
-    front: { pos: new THREE.Vector3(-.9, 1.35, 2.5), look: new THREE.Vector3(-.9, 1.2, -1.2) },
-    center: { pos: new THREE.Vector3(0, 1.35, 2.5), look: new THREE.Vector3(0, 1.2, -1.2) },
-    top: { pos: new THREE.Vector3(0, 2.7, .62), look: new THREE.Vector3(0, .8, .2) },
+    center: { pos: V(0, 1.38, 2.35), look: V(0, 1.25, -1.2), fov: 50 },
+    sel: { pos: V(-.95, 1.3, 2.6), look: V(-.95, 1.15, -1.2), fov: 50 },
+    top: { pos: V(0, 2.7, .62), look: V(0, .8, .2), fov: 50 },
+    story: { pos: V(0, 1.45, 1.6), look: V(0, 1.42, -1.2), fov: 46 },
+    judge: { pos: V(-1.2, 1.4, 2.45), look: V(-1.2, 1.28, -1.2), fov: 50 },
   };
-  const camState = { pos: A.front.pos.clone(), look: A.front.look.clone(), at: "front" };
-  S3.camTo = async function (name, ms = 1100) {
-    const from = { pos: camState.pos.clone(), look: camState.look.clone() }, to = A[name], side = name === "top" ? 1.6 : -1.6;
+  A.front = A.sel;
+  const camState = { pos: A.center.pos.clone(), look: A.center.look.clone(), fov: 50, at: "center", kick: 0 };
+  // 切りかえ：回りこみ（ベジェ）＋ズーム＋止まる瞬間のゆれ
+  S3.camTo = async function (name, ms = 900) {
+    const from = { pos: camState.pos.clone(), look: camState.look.clone(), fov: camState.fov }, to = A[name];
     camState.at = name;
-    if (!ms || S3.lite) { camState.pos.copy(to.pos); camState.look.copy(to.look); return; }
-    const ctrl = new THREE.Vector3((from.pos.x + to.pos.x) / 2 + side, Math.max(from.pos.y, to.pos.y) + .4, (from.pos.z + to.pos.z) / 2 + .6);
+    if (!ms || S3.lite) { camState.pos.copy(to.pos); camState.look.copy(to.look); camState.fov = to.fov; return; }
+    const dx = to.pos.x - from.pos.x, side = name === "top" ? 1.4 : (Math.abs(dx) > .3 ? -Math.sign(dx) * .5 : (Math.random() < .5 ? -.7 : .7));
+    const ctrl = V((from.pos.x + to.pos.x) / 2 + side, Math.max(from.pos.y, to.pos.y) + .35, (from.pos.z + to.pos.z) / 2 + .7);
+    const zoom = name === "top" ? 0 : 7; // 一度ひいてから寄る
     await S3.tween(ms, t => {
-      const e = ease(t), a = new THREE.Vector3().copy(from.pos).multiplyScalar((1 - e) * (1 - e));
-      a.addScaledVector(ctrl, 2 * (1 - e) * e).addScaledVector(to.pos, e * e); camState.pos.copy(a); camState.look.lerpVectors(from.look, to.look, e);
+      const e = easeOutBack(t), b = ease(t), a = V(0, 0, 0).copy(from.pos).multiplyScalar((1 - b) * (1 - b));
+      a.addScaledVector(ctrl, 2 * (1 - b) * b).addScaledVector(to.pos, b * b);
+      camState.pos.copy(a).lerp(to.pos, Math.max(0, e - 1) * 2); camState.look.lerpVectors(from.look, to.look, Math.min(1.04, e));
+      camState.fov = from.fov + (to.fov - from.fov) * b + Math.sin(Math.PI * t) * zoom;
     });
+    camState.kick = 1; // 止まる瞬間のゆれ
   };
+  const easeOutBack = t => { const c = 1.4; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
   S3.shake = () => S3.tween(300, t => { dealer.position.x = Math.sin(t * 40) * .03 * (1 - t); });
 
   let tt = 0, last = 0;
@@ -153,8 +193,16 @@
     requestAnimationFrame(loop);
     if (S3.lite && now - last < 32) return; last = now;
     for (let i = anims.length - 1; i >= 0; i--) { const a = anims[i], t = Math.min(1, (now - a.t0) / a.ms); a.fn(t); if (t >= 1) { anims.splice(i, 1); a.res(); } }
-    tt += .016; dealer.position.y = dealer.userData.y0 + (dealer.userData.yy || 0) + Math.sin(tt * 1.6) * .008;
-    cam.position.copy(camState.pos); cam.lookAt(camState.look);
+    tt += .016;
+    // 立ち絵は ゆっくり上下に ふわっと浮く
+    dealer.position.y = dealer.userData.y0 + (dealer.userData.yy || 0) + Math.sin(tt * 1.1) * .035 + (S3.story ? S3.storyY : 0);
+    // 手持ちカメラ風のゆれ（カード選択中は大きめ）＋止まる瞬間のゆれ
+    const amp = S3.lite ? 0 : camState.at === "sel" ? 1 : .35;
+    const jx = (Math.sin(tt * .9) * .012 + Math.sin(tt * 2.3 + 1) * .006) * amp, jy = (Math.sin(tt * 1.3 + 2) * .009 + Math.sin(tt * 3.1) * .004) * amp;
+    camState.kick *= .9; const k = camState.kick > .01 ? Math.sin(now / 22) * .02 * camState.kick : 0;
+    cam.position.set(camState.pos.x + jx, camState.pos.y + jy + k, camState.pos.z);
+    cam.lookAt(camState.look.x + jx * .6, camState.look.y + jy * .6 + k * .5, camState.look.z);
+    if (Math.abs(cam.fov - camState.fov) > .01) { cam.fov = camState.fov; cam.updateProjectionMatrix(); }
     if (S3.visible !== false) renderer.render(scene, cam);
   }
 })(window.KP);

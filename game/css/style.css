@@ -27,27 +27,74 @@ button{font-family:inherit;font-weight:900;color:inherit;cursor:pointer;backgrou
 .pbtn.red:hover:not(:disabled){background:#fff;color:#d7141f;box-shadow:6px 6px 0 #111}
 .pbtn.sm{height:56px;font-size:22px}
 .pbtn.on{background:#111;color:#fff;box-shadow:6px 6px 0 #fff}
-.htitle{position:absolute;font-family:"KPDela",sans-serif;font-weight:400;font-size:44px;color:#fff;height:60px;line-height:60px;white-space:nowrap}
+.htitle{position:absolute;font-family:"KPDela",sans-serif;font-weight:400;font-size:44px;color:#fff;height:100px;line-height:100px;white-space:nowrap}
 .htitle.big{font-size:72px;height:108px;line-height:108px}
 
 /* タイトル */
-#logo{position:absolute;left:50px;top:110px;width:740px;height:258px;object-fit:contain;filter:drop-shadow(8px 8px 0 #111)}
-#menu{position:absolute;left:900px;top:190px;width:400px;display:flex;flex-direction:column;gap:18px}
-#sign{position:absolute;left:40px;top:712px;width:300px;height:32px;line-height:32px;color:#fff;font-size:18px}
+/* ---- タイトル（動く背景） ---- */
+#scr-title{background:#0a0a0a;overflow:hidden}
+.tbg{position:absolute;inset:-200px}
+#bgStripe{background:repeating-linear-gradient(-30deg,#0a0a0a 0 80px,#141414 80px 160px);animation:stripe 6s linear infinite}
+@keyframes stripe{to{transform:translate(185px,0)}}
+#bgRed{left:-300px;right:auto;width:900px;top:-300px;bottom:-300px;background:#d7141f;transform:skewX(-18deg);background-image:radial-gradient(rgba(0,0,0,.28) 24%,transparent 26%);background-size:16px 16px;animation:redPulse 5s ease-in-out infinite}
+@keyframes redPulse{0%,100%{transform:skewX(-18deg) translateX(0)}50%{transform:skewX(-18deg) translateX(30px)}}
+#bgRed2{left:520px;width:60px;top:-300px;bottom:-300px;right:auto;background:#fff;transform:skewX(-18deg);animation:redPulse 5s ease-in-out infinite;opacity:.9}
+#sweep{position:absolute;top:-100px;bottom:-100px;width:260px;left:-400px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);transform:skewX(-18deg);animation:sweep 4.5s cubic-bezier(.6,0,.4,1) infinite;pointer-events:none}
+@keyframes sweep{0%{left:-400px}60%,100%{left:1600px}}
+.ticker{position:absolute;left:0;white-space:nowrap;font-family:"KPDela",sans-serif;font-size:120px;line-height:130px;color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.08);animation:tick 30s linear infinite;pointer-events:none}
+.ticker.b{animation-direction:reverse;-webkit-text-stroke-color:rgba(215,20,31,.25)}
+@keyframes tick{to{transform:translateX(-50%)}}
+#sil{position:absolute;left:560px;top:30px;width:560px;height:760px;pointer-events:none}
+#sil .ln{position:absolute;left:-200px;right:-200px;height:6px;background:#fff;opacity:0;transform:skewY(-8deg)}
+#silImg{position:absolute;left:80px;top:0;height:880px;filter:brightness(0) drop-shadow(6px 0 0 #d7141f) drop-shadow(-3px 0 0 #fff);opacity:0}
+#sil.in #silImg{animation:silIn 10s cubic-bezier(.2,.9,.2,1) both}
+#sil.in .ln{animation:lnIn 10s ease-out both}
+@keyframes silIn{0%{transform:translateX(700px) skewX(-12deg);opacity:0}5%{transform:translateX(-20px) skewX(4deg);opacity:1}8%{transform:translateX(0) skewX(0)}88%{transform:translateX(-30px);opacity:1}94%,100%{transform:translateX(-800px) skewX(14deg);opacity:0}}
+@keyframes lnIn{0%{opacity:0}2%{opacity:.9;transform:skewY(-8deg) scaleX(1)}7%,100%{opacity:0;transform:skewY(-8deg) scaleX(0)}}
+#tflash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+#tflash.on{animation:tflash .35s ease-out}
+@keyframes tflash{0%{opacity:.55}100%{opacity:0}}
+#logo{position:absolute;left:30px;top:88px;width:760px;height:250px;object-fit:contain;filter:drop-shadow(10px 10px 0 #000)}
+#scr-title.in #logo{animation:logoIn .7s .1s cubic-bezier(.2,1.4,.4,1) both,float 4s 1s ease-in-out infinite}
+@keyframes logoIn{from{transform:scale(1.8) rotate(-6deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes float{0%,100%{translate:0 0}50%{translate:0 -10px}}
+#menu{position:absolute;left:930px;top:200px;width:380px;display:flex;flex-direction:column;gap:18px}
+.mb{position:relative;display:block;height:64px;width:100%;border:3px solid #fff;background:#0a0a0a;color:#fff;font-family:"KPDela",sans-serif;font-weight:400;font-size:28px;transform:skewX(-14deg);box-shadow:7px 7px 0 #d7141f;overflow:hidden}
+.mb span{position:relative;display:block;transform:skewX(14deg);width:calc(100% - 20px);margin:0 auto}
+.mb::before{content:"";position:absolute;inset:0;background:#d7141f;transform:translateX(-102%);transition:transform .18s cubic-bezier(.2,.8,.2,1)}
+.mb:hover::before{transform:none}
+.mb:hover{animation:mshake .3s;box-shadow:7px 7px 0 #fff}
+.mb:active{transform:skewX(-14deg) translate(4px,4px) scale(.97);box-shadow:2px 2px 0 #fff}
+#scr-title.in .mb{animation:mIn .45s cubic-bezier(.2,1.3,.4,1) both}
+#scr-title.in .mb:nth-child(1){animation-delay:.35s}#scr-title.in .mb:nth-child(2){animation-delay:.42s}#scr-title.in .mb:nth-child(3){animation-delay:.49s}#scr-title.in .mb:nth-child(4){animation-delay:.56s}#scr-title.in .mb:nth-child(5){animation-delay:.63s}
+#scr-title.in .mb:hover{animation:mshake .3s}
+@keyframes mIn{from{transform:skewX(-14deg) translateX(520px);opacity:0}to{transform:skewX(-14deg);opacity:1}}
+@keyframes mshake{0%,100%{transform:skewX(-14deg)}25%{transform:skewX(-14deg) translateX(-6px) rotate(-1deg)}75%{transform:skewX(-14deg) translateX(5px) rotate(1deg)}}
+#sign{position:absolute;left:40px;top:716px;width:300px;height:32px;line-height:32px;color:#fff;font-size:16px;opacity:.8}
 
 /* 学年選択 */
-#gTitle{left:60px;top:108px}
+#gTitle{left:60px;top:88px}
 #gList{position:absolute;left:103px;top:226px;display:flex;gap:40px}
 .gcard{position:relative;width:360px;height:404px;background:#fff;border:4px solid #111;box-shadow:10px 10px 0 #111;transform:skewX(-5deg);display:flex;flex-direction:column;align-items:stretch;padding:18px 22px;gap:8px;text-align:left;transition:transform .1s}
 .gcard:hover:not(.lock){transform:skewX(-5deg) translateY(-6px) rotate(-1deg);box-shadow:10px 16px 0 #111}
-.gcard .gn{font-family:"KPDela",sans-serif;font-weight:400;font-size:46px;height:64px;line-height:64px;color:#d7141f;text-align:center}
-.gcard .gr{height:38px;line-height:38px;font-size:20px;border-bottom:2px dashed #bbb;display:flex;justify-content:space-between;white-space:nowrap}
+.gcard .gn{font-family:"KPDela",sans-serif;font-weight:400;font-size:44px;height:74px;line-height:1;padding-top:14px;color:#d7141f;text-align:center;white-space:nowrap}
+.gcard .gr{height:44px;line-height:1;font-size:20px;border-bottom:2px dashed #bbb;display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:6px;white-space:nowrap}
+.gcard .gr b{font-size:20px}
 .gcard .gr b{font-family:"KPDela",sans-serif;font-weight:400}
 .gcard .gb{margin-top:auto;height:52px;line-height:52px;background:#111;color:#fff;text-align:center;font-size:22px;white-space:nowrap}
 .gcard.lock{background:#555;color:#ccc;cursor:default;box-shadow:10px 10px 0 #222}
 .gcard.lock .gn{color:#999}
 .gcard .glock{position:absolute;left:22px;right:22px;top:150px;height:120px;background:#111;color:#fff;font-size:20px;line-height:1.5;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 10px}
 #gBack{position:absolute;left:40px;top:676px;width:220px}
+#gHard{position:absolute;left:290px;top:676px;width:220px;display:none}
+#scr-grade.hardmode{background-color:#0a0a0a;background-image:radial-gradient(rgba(215,20,31,.35) 22%,transparent 23%)}
+#scr-grade.hardmode .band{background:#d7141f}
+#scr-grade.hardmode .gcard:not(.lock){border-color:#d7141f;box-shadow:10px 10px 0 #d7141f}
+.gcard .gn small{font-size:24px;margin-left:8px;color:#111}
+#spot{position:absolute;inset:0;pointer-events:none;opacity:0;z-index:5;background:radial-gradient(ellipse 200px 90px at 400px 704px,rgba(0,0,0,0) 60%,rgba(0,0,0,.82) 100%);transition:opacity .3s}
+#spot.on{opacity:1}
+#gHard.lit{z-index:6;animation:lit .6s ease-in-out infinite alternate}
+@keyframes lit{from{box-shadow:6px 6px 0 #fff,0 0 0 rgba(255,255,255,0)}to{box-shadow:6px 6px 0 #fff,0 0 40px #fff}}
 
 /* 対戦の上の表示 */
 .hud{position:absolute;top:20px;height:48px;line-height:48px;background:#111;color:#fff;font-family:"KPDela",sans-serif;font-weight:400;font-size:22px;transform:skewX(-14deg);box-shadow:6px 6px 0 #fff;text-align:center;white-space:nowrap;overflow:hidden}
@@ -55,12 +102,14 @@ button{font-family:inherit;font-weight:900;color:inherit;cursor:pointer;backgrou
 .hud.btn{font-size:20px}
 .hud.btn:hover{background:#fff;color:#111}
 #hDealer{left:24px;width:250px}
+#hDeck{left:752px;width:154px}
 #hStars{left:298px;width:430px;display:flex;align-items:center;justify-content:center;gap:6px;font-family:"KPMaru",sans-serif;font-weight:900;font-size:18px}
 #hStars .sp{width:22px}
 #hStars svg{width:28px;height:28px;display:block}
 #hSwap{left:930px;width:262px;display:flex;align-items:center;justify-content:center;gap:12px}
 #hSwap span{font-family:"KPMaru",sans-serif;font-weight:900;font-size:18px}
 #hSwap b{font-family:"KPDela",sans-serif;font-weight:400;font-size:30px;color:#d7141f;width:56px}
+#hSwap b.inf{width:120px;font-size:24px}
 #hPause{left:1216px;width:126px}
 #skipBtn{display:none;left:1182px;width:160px;z-index:30}
 
@@ -70,9 +119,9 @@ button{font-family:inherit;font-weight:900;color:inherit;cursor:pointer;backgrou
 #sel>.band{pointer-events:none}
 #sel.off{display:none}
 #hint{position:absolute;left:40px;top:262px;width:470px;height:40px;line-height:40px;padding:0 18px;background:#fff;color:#111;font-size:19px;transform:skewX(-12deg);box-shadow:5px 5px 0 #d7141f;white-space:nowrap;overflow:hidden}
-#pv{position:absolute;left:40px;top:316px;width:760px;height:52px;background:rgba(17,17,17,.9);transform:skewX(-12deg);display:flex;align-items:center;gap:14px;padding:0 18px;box-shadow:5px 5px 0 #d7141f}
+#pv{position:absolute;left:40px;top:314px;width:760px;height:58px;background:rgba(17,17,17,.9);transform:skewX(-12deg);display:flex;align-items:center;gap:14px;padding:0 18px;box-shadow:5px 5px 0 #d7141f}
 #pv .pvl{flex:none;color:#ff5a63;font-size:16px;width:72px}
-#pv .pvt{flex:1;min-width:0;color:#fff;font-family:"KPDela",sans-serif;font-weight:400;font-size:28px;white-space:nowrap;overflow:hidden}
+#pv .pvt{flex:1;min-width:0;color:#fff;font-family:"KPDela",sans-serif;font-weight:400;font-size:26px;line-height:58px;height:58px;white-space:nowrap;overflow:hidden}
 #pvScore{position:absolute;left:530px;top:262px;width:270px;height:40px;line-height:40px;background:#fff;transform:skewX(-12deg);box-shadow:5px 5px 0 #d7141f;text-align:center;font-size:20px;white-space:nowrap;overflow:hidden}
 #slots{position:absolute;left:40px;top:384px;display:flex;gap:26px}
 .slot{width:126px;height:172px;display:flex;flex-direction:column;gap:6px}
@@ -94,10 +143,10 @@ button{font-family:inherit;font-weight:900;color:inherit;cursor:pointer;backgrou
 .hcard{position:relative;width:108px;height:150px;background:#fff;border:3px solid #fff;display:flex;flex-direction:column;transition:transform .1s,opacity .1s}
 .hcard .bd{height:26px;line-height:26px;font-size:14px}
 .hcard .wd{flex:1;display:flex;align-items:center;justify-content:center;font-family:"KPDela",sans-serif;font-weight:400;font-size:21px;white-space:nowrap;overflow:hidden;padding:0 4px;color:#111}
-.hcard .sb{height:24px;line-height:24px;font-size:13px;color:#555;white-space:nowrap;overflow:hidden}
+.hcard .sb{height:28px;line-height:30px;font-size:13px;color:#555;white-space:nowrap;overflow:hidden}
 .hcard:hover:not(.used){transform:translateY(-8px) rotate(0deg)!important}
 .hcard:active:not(.used){transform:translateY(-2px) scale(.96)!important}
-.hcard.used{opacity:.3;cursor:default}
+.hcard.used{opacity:.3;cursor:default;filter:grayscale(1)}
 .hcard.hold{transform:translateY(-16px)!important;border-color:#3dd27a;box-shadow:0 0 0 4px #3dd27a}
 .hcard.mark{transform:translateY(-16px)!important;border-color:#111}
 .hcard.mark::after{content:"入れかえ";position:absolute;left:0;right:0;bottom:0;height:26px;line-height:26px;background:#111;color:#fff;font-size:16px;text-align:center}
@@ -106,7 +155,7 @@ button{font-family:inherit;font-weight:900;color:inherit;cursor:pointer;backgrou
 #bGo{left:1188px}
 
 /* ショップ */
-#spTitle{left:383px;width:600px;top:40px;text-align:center;background:#111;transform:skewX(-12deg);box-shadow:6px 6px 0 #d7141f;font-size:36px}
+#spTitle{left:383px;width:600px;top:30px;height:80px;line-height:80px;text-align:center;background:#111;transform:skewX(-12deg);box-shadow:6px 6px 0 #d7141f;font-size:36px}
 #spCards{position:absolute;left:347px;top:140px;display:grid;grid-template-columns:repeat(4,150px);gap:24px}
 #spCards .hcard{width:150px;height:200px;cursor:pointer}
 #spCards .hcard .wd{font-size:26px}
@@ -114,6 +163,7 @@ button{font-family:inherit;font-weight:900;color:inherit;cursor:pointer;backgrou
 #spCards .hcard.on{transform:translateY(-10px);box-shadow:0 0 0 5px #d7141f}
 #spInfo{position:absolute;left:347px;top:600px;width:430px;height:56px;line-height:56px;background:#fff;transform:skewX(-12deg);box-shadow:5px 5px 0 #111;text-align:center;font-size:20px;white-space:nowrap;overflow:hidden}
 #spOk{position:absolute;left:809px;top:596px;width:210px}
+#spDeck{position:absolute;left:1049px;top:596px;width:200px}
 
 /* クリア */
 #rTitle{left:60px;top:72px}
@@ -134,10 +184,17 @@ button{font-family:inherit;font-weight:900;color:inherit;cursor:pointer;backgrou
 .ci-band2{top:196px;height:330px;background:#d7141f}
 .ci-band{top:216px;height:290px;background:#111}
 #ciImg{position:absolute;left:840px;top:60px;height:640px;filter:drop-shadow(10px 10px 0 #d7141f)}
-#ciText{position:absolute;left:110px;top:300px;width:720px}
-#ciRole{display:inline-block;height:46px;line-height:46px;padding:0 22px;background:#fff;color:#111;font-size:26px;transform:skewX(-12deg)}
-#ciName{margin-top:10px;height:100px;line-height:100px;font-family:"KPDela",sans-serif;font-weight:400;font-size:76px;color:#fff;white-space:nowrap}
-#ciName rt{font-family:"KPMaru",sans-serif;font-weight:900;font-size:24px}
+#cutin.shop #ciImg{top:120px}
+.ci-foot{position:absolute;left:-100px;width:1600px;top:690px;height:300px;background:#111;border-top:8px solid #d7141f;transform:rotate(-6deg);transform-origin:0 0}
+#ciText{position:absolute;left:110px;top:236px;width:720px}
+#ciNick{display:inline-block;height:48px;line-height:48px;padding:0 24px;background:#fff;color:#d7141f;font-size:26px;transform:skewX(-14deg);white-space:nowrap;box-shadow:5px 5px 0 #d7141f}
+#ciName{margin-top:8px;height:120px;line-height:136px;font-family:"KPDela",sans-serif;font-weight:400;font-size:76px;color:#fff;white-space:nowrap}
+#ciName rt{font-family:"KPMaru",sans-serif;font-weight:900;font-size:22px}
+#ciRole{display:inline-block;height:44px;line-height:44px;padding:0 22px;background:#d7141f;color:#fff;font-size:24px;transform:skewX(-12deg);white-space:nowrap}
+#ciRole.flip{animation:roleFlip .4s cubic-bezier(.2,1.5,.4,1)}
+@keyframes roleFlip{from{transform:skewX(-12deg) scaleY(0)}to{transform:skewX(-12deg)}}
+#cutin.on .ci-foot{animation:ciIn .35s .08s cubic-bezier(.2,.8,.2,1) both}
+#cutin.on #ciNick{animation:ciTxt .4s .45s cubic-bezier(.2,.8,.2,1) both}
 #cutin.on .ci-band,#cutin.on .ci-band2{animation:ciIn .35s cubic-bezier(.2,.8,.2,1) both}
 #cutin.on .ci-band2{animation-delay:.05s}
 #cutin.on #ciImg{animation:ciImg .45s .15s cubic-bezier(.2,.8,.2,1) both}
@@ -158,9 +215,11 @@ button{font-family:inherit;font-weight:900;color:inherit;cursor:pointer;backgrou
 #msg.on{display:block}
 #mName{position:absolute;left:24px;top:-24px;height:42px;line-height:42px;padding:0 26px;background:#d7141f;color:#fff;font-family:"KPDela",sans-serif;font-weight:400;font-size:22px;transform:skewX(-12deg);z-index:1;white-space:nowrap;box-shadow:4px 4px 0 #111}
 #mName:empty{display:none}
-#mBody{position:absolute;inset:0;background:rgba(17,17,17,.95);border:4px solid #fff;box-shadow:8px 8px 0 #d7141f;padding:28px 34px 16px;transition:transform .08s}
+#mBody{position:absolute;inset:0;background:rgba(17,17,17,.98);border:4px solid #fff;box-shadow:8px 8px 0 #d7141f;padding:28px 34px 16px;transition:transform .08s}
 #msg:hover #mBody{transform:translate(-2px,-2px);box-shadow:10px 10px 0 #d7141f}
-#mText{color:#fff;font-size:24px;line-height:38px;height:114px;overflow:hidden;white-space:pre-line}
+#mText{color:#fff;font-size:24px;line-height:40px;height:120px;overflow:hidden;white-space:pre-line;margin-top:-6px}
+#mText .tc{display:inline;animation:tc .14s ease-out both}
+@keyframes tc{from{opacity:0;filter:blur(2px)}to{opacity:1;filter:none}}
 #msg.ch #mText{width:600px}
 #mChoices{position:absolute;right:26px;top:22px;display:none;flex-direction:column;gap:12px;width:300px}
 #msg.ch #mChoices{display:flex}
@@ -173,8 +232,26 @@ button{font-family:inherit;font-weight:900;color:inherit;cursor:pointer;backgrou
 #pop{position:absolute;inset:0;background:rgba(0,0,0,.62);display:none;z-index:40}
 #pop.on{display:block}
 #popBox{position:absolute;left:183px;top:84px;width:1000px;height:600px;background:#fff;border:6px solid #111;box-shadow:14px 14px 0 #d7141f}
+#popBox.pin{animation:popIn .32s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes popIn{from{transform:translateX(-120px) skewX(8deg);opacity:0}to{transform:none;opacity:1}}
 #popTitle{height:76px;line-height:76px;background:#111;color:#fff;font-family:"KPDela",sans-serif;font-weight:400;font-size:34px;padding:0 30px;white-space:nowrap;overflow:hidden}
-#popBody{position:absolute;left:0;right:0;top:76px;height:420px;padding:26px 40px;font-size:24px;line-height:1.65;overflow:hidden}
+#popBody{position:absolute;left:0;right:0;top:76px;height:420px;padding:22px 40px;font-size:24px;line-height:1.85;overflow:hidden}
+#popBody .bnote{margin-top:14px;font-size:18px;line-height:1.7}
+#popBody .big-note{font-family:"KPDela",sans-serif;font-weight:400;font-size:40px;color:#d7141f;line-height:1.7;margin-bottom:6px}
+.eplist{display:grid;grid-template-columns:repeat(5,152px);gap:30px;padding:10px 0 0 8px}
+.epb{height:220px;background:#111;color:#fff;border:4px solid #111;box-shadow:6px 6px 0 #d7141f;transform:skewX(-6deg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:0 10px}
+.epb .epn{font-family:"KPDela",sans-serif;font-weight:400;font-size:30px;height:56px;line-height:60px;white-space:nowrap}
+.epb .ept{font-size:18px;line-height:1.9;height:96px;display:flex;align-items:center;text-align:center;overflow:hidden}
+.epb.omake{background:#d7141f;border-color:#fff}
+.epb.lock{background:#444;color:#888;box-shadow:6px 6px 0 #222;cursor:default}
+.epb:hover:not(.lock){animation:wob .3s}
+.deckgrid{display:grid;grid-template-columns:repeat(8,100px);gap:10px 12px}
+.dk{height:96px;background:#fff;border:3px solid #111;display:flex;flex-direction:column;overflow:hidden}
+.dk .bd{height:24px;line-height:22px;font-size:13px;text-align:center}
+.dk .wd{flex:1;display:flex;align-items:center;justify-content:center;font-family:"KPDela",sans-serif;font-weight:400;font-size:17px;white-space:nowrap;overflow:hidden;padding:0 3px;line-height:1.9}
+.dk .st{height:22px;line-height:22px;font-size:12px;text-align:center;background:#eee;color:#555}
+.dk .st.h{background:#111;color:#fff}.dk .st.d{background:#999;color:#fff}
+.dksum{font-size:18px;line-height:1.6;margin-bottom:10px}
 #popBody .em{color:#d7141f}
 #popBody .chip{display:inline-block;padding:0 12px;margin:0 2px;line-height:34px;font-size:20px;color:#fff;transform:skewX(-10deg)}
 #popBody .row{display:flex;align-items:center;gap:18px;height:62px;border-bottom:2px dashed #ccc}
@@ -188,3 +265,114 @@ button{font-family:inherit;font-weight:900;color:inherit;cursor:pointer;backgrou
 #loading.off{display:none}
 .hcard.new{animation:cardIn .35s cubic-bezier(.2,.8,.2,1) both}
 @keyframes cardIn{from{opacity:0;margin-top:60px}to{opacity:1;margin-top:0}}
+
+/* ---- ふりがな ---- */
+ruby{ruby-position:over}
+rt{font-family:"KPMaru",sans-serif;font-weight:900;font-size:.42em;line-height:1;letter-spacing:0;text-align:center}
+.hcard .wd,.scard .wd,.jc .wd{line-height:1.9;padding-top:4px}
+.hcard .bd,.scard .bd{line-height:1.6}
+.hcard .bd rt,.scard .bd rt,.hcard .sb rt,.jc .bd rt{font-size:.5em}
+.hud rt{font-size:.38em}
+#popFoot .pbtn rt,.pbtn rt{font-size:.38em}
+.pbtn{line-height:1.9}
+
+/* ---- 時間差スライドイン・マウスオーバーでゆれる・クリックの反応 ---- */
+.si.sin{animation:sin .38s var(--d,0ms) cubic-bezier(.2,1.25,.4,1) both}
+@keyframes sin{from{translate:-160px 0;opacity:0}60%{opacity:1}to{translate:0 0;opacity:1}}
+#bGo.si.sin,#bSwap.si.sin,#hSwap.si.sin,#hPause.si.sin,#hDeck.si.sin,#rRank.si.sin,#spOk.si.sin,#spDeck.si.sin{animation-name:sinR}
+@keyframes sinR{from{translate:160px 0;opacity:0}60%{opacity:1}to{translate:0 0;opacity:1}}
+@keyframes wob{0%,100%{rotate:0deg}25%{rotate:-1.6deg;translate:-3px 0}75%{rotate:1.4deg;translate:3px 0}}
+.pbtn:hover:not(:disabled),.hud.btn:hover,.gcard:hover:not(.lock),#msg:hover #mBody,.scard.full:hover{animation:wob .3s}
+.hcard:hover:not(.used){animation:wob .3s}
+.clk{animation:clk .42s cubic-bezier(.2,1.6,.4,1)!important}
+@keyframes clk{0%{scale:1}25%{scale:.9;filter:brightness(1.6)}60%{scale:1.06}100%{scale:1}}
+.clkfx{position:absolute;width:20px;height:20px;margin:-10px 0 0 -10px;border:4px solid #fff;border-radius:50%;pointer-events:none;z-index:90;animation:clkfx .45s ease-out forwards;box-shadow:0 0 12px #d7141f}
+@keyframes clkfx{from{transform:scale(.3);opacity:1}to{transform:scale(5);opacity:0}}
+
+/* ---- カードを配る（1まいずつ飛んできて めくれる） ---- */
+.hcard.new{animation:deal .38s cubic-bezier(.2,.9,.3,1.1) both}
+@keyframes deal{0%{translate:700px -420px;rotate:-40deg;scale:.6;opacity:0}45%{opacity:1}70%{scale:1.05}100%{translate:0 0;rotate:0deg;scale:1;opacity:1}}
+.hcard.new .bd,.hcard.new .wd,.hcard.new .sb{animation:cflip .38s both;animation-delay:inherit}
+@keyframes cflip{0%,55%{opacity:0}100%{opacity:1}}
+#spCards .hcard.new{animation:deal .38s cubic-bezier(.2,.9,.3,1.1) both}
+
+/* ---- 入れかえ中 ---- */
+#swapFx{position:absolute;inset:0;display:none;pointer-events:none}
+#swapFx::before{content:"";position:absolute;inset:0;background:rgba(120,0,12,.55);mix-blend-mode:multiply}
+#swapFx::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 120px 30px rgba(215,20,31,.55);animation:swpulse 1s ease-in-out infinite alternate}
+@keyframes swpulse{from{opacity:.5}to{opacity:1}}
+#battle.swapping #swapFx{display:block}
+#swapFx .sbar{position:absolute;left:0;right:0;top:80px;height:46px;background:#0a0a0a;overflow:hidden;z-index:1;border-top:3px solid #d7141f;border-bottom:3px solid #d7141f}
+#swapFx .stx{position:absolute;left:0;top:0;white-space:nowrap;height:40px;line-height:40px;font-family:"KPDela",sans-serif;font-size:26px;color:#ff2b36;animation:tick 9s linear infinite}
+#swapFx .stx::before{content:"いれかえ中……　いれかえ中……　いれかえ中……　いれかえ中……　いれかえ中……　いれかえ中……　いれかえ中……　いれかえ中……　いれかえ中……　いれかえ中……　いれかえ中……　いれかえ中……　いれかえ中……　いれかえ中……　いれかえ中……　いれかえ中……　"}
+#battle.swapping #hand .hcard:not(.mark){filter:saturate(.6)}
+#battle.hard #hDealer{background:#d7141f}
+
+/* ---- 点数の計算（3Dの上の赤いパネル） ---- */
+#judge{position:absolute;inset:0;display:none;z-index:12;cursor:pointer}
+#judge.on{display:block}
+#judge::before{content:"";position:absolute;left:22px;top:84px;width:790px;height:478px;background-color:rgba(150,8,18,.86);background-image:radial-gradient(rgba(0,0,0,.25) 22%,transparent 23%);background-size:10px 10px;border:6px solid #111;outline:3px solid #d7141f;outline-offset:-14px;box-shadow:10px 10px 0 rgba(0,0,0,.6);animation:jIn .3s cubic-bezier(.2,1.2,.4,1) both}
+@keyframes jIn{from{transform:translateX(-200px) skewX(10deg);opacity:0}to{transform:none;opacity:1}}
+.jrow{position:absolute;left:52px;width:740px;height:210px}
+#jD{top:104px}#jP{top:322px}
+.jwho{position:absolute;left:0;top:0;height:34px;line-height:36px;padding:0 18px;background:#111;color:#fff;font-size:17px;transform:skewX(-14deg);box-shadow:4px 4px 0 #fff;white-space:nowrap}
+#jP .jwho{background:#fff;color:#111;box-shadow:4px 4px 0 #111}
+.jcards{position:absolute;left:0;top:42px;display:flex;gap:8px}
+.jcol{width:70px;display:flex;flex-direction:column;gap:4px;opacity:0}
+.jcol.on{animation:jcard .26s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes jcard{from{transform:translateY(-40px) rotate(-12deg) scale(1.4);opacity:0}to{transform:rotate(-1deg);opacity:1}}
+.jadj{height:30px;line-height:34px;background:#3dd27a;color:#111;border:2px solid #111;font-size:13px;text-align:center;white-space:nowrap;overflow:hidden;transform:skewX(-8deg)}
+.jadj.none{visibility:hidden}
+.jc{height:116px;background:#fff;border:3px solid #111;display:flex;flex-direction:column;box-shadow:4px 4px 0 #111}
+.jc .bd{height:24px;line-height:24px;font-size:12px;text-align:center}
+.jc .wd{flex:1;display:flex;align-items:center;justify-content:center;font-family:"KPDela",sans-serif;font-weight:400;font-size:17px;white-space:nowrap;overflow:hidden;padding:4px 2px 0}
+.jrow.ng .jc{filter:grayscale(.5)}
+.jcalc{position:absolute;left:560px;top:26px;width:190px;height:160px}
+.jf{height:46px;line-height:46px;color:#fff;font-size:20px;white-space:nowrap;opacity:0}
+.jp rt{-webkit-text-stroke:0;font-size:.22em}
+.jp{height:100px;line-height:100px;margin-top:8px;color:#fff;font-family:"KPDela",sans-serif;font-weight:400;font-size:66px;white-space:nowrap;-webkit-text-stroke:6px #111;paint-order:stroke fill;opacity:0}
+.jrow.ng .jf{color:#ffd2d5}
+.jf.on{animation:bang .3s cubic-bezier(.2,1.8,.4,1) both}
+.jp.on{animation:bang2 .34s cubic-bezier(.2,1.8,.4,1) both}
+@keyframes bang{from{transform:scale(2.2) rotate(-8deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes bang2{from{transform:scale(3) rotate(10deg);opacity:0}to{transform:rotate(-3deg);opacity:1}}
+#jBurst{position:absolute;left:800px;top:372px;width:290px;height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none}
+#jBurst::before{content:"";position:absolute;inset:0;background:#fff;clip-path:polygon(50% 0,59% 22%,80% 6%,75% 31%,100% 28%,82% 47%,100% 66%,74% 66%,82% 93%,60% 76%,50% 100%,40% 77%,17% 94%,25% 68%,0 70%,18% 50%,0 30%,25% 32%,19% 6%,41% 22%);filter:drop-shadow(8px 8px 0 #111)}
+#jBurst::after{content:"";position:absolute;inset:0;background:#111;z-index:-1;clip-path:polygon(50% 0,59% 22%,80% 6%,75% 31%,100% 28%,82% 47%,100% 66%,74% 66%,82% 93%,60% 76%,50% 100%,40% 77%,17% 94%,25% 68%,0 70%,18% 50%,0 30%,25% 32%,19% 6%,41% 22%);transform:translate(10px,10px)}
+#jBurst.on{opacity:1;animation:burst .4s cubic-bezier(.2,1.8,.4,1) both}
+@keyframes burst{from{transform:scale(.2) rotate(-30deg)}to{transform:rotate(-8deg)}}
+.jbt{position:relative;font-family:"KPDela",sans-serif;font-weight:400;font-size:46px;line-height:80px;color:#d7141f;white-space:nowrap;height:80px;margin-bottom:24px}
+#jBurst.ng .jbt{color:#111;font-size:36px}
+.jbs{position:relative;font-size:18px;color:#111;white-space:nowrap;height:30px;line-height:30px}
+#jBand{position:absolute;left:40px;top:596px;width:1290px;height:64px;background:#111;border:3px solid #d7141f;transform:skewX(-10deg);display:flex;align-items:center;gap:20px;padding:0 24px;opacity:0;box-shadow:8px 8px 0 rgba(0,0,0,.5)}
+#jBand.on{opacity:1;animation:jbIn .3s cubic-bezier(.2,1.2,.4,1) both}
+@keyframes jbIn{from{transform:skewX(-10deg) translateX(-400px)}to{transform:skewX(-10deg)}}
+#jBand .jtag{flex:none;height:34px;line-height:36px;padding:0 14px;background:#d7141f;color:#fff;font-size:17px}
+#jBand .jtx{flex:1;min-width:0;color:#fff;font-size:22px;line-height:2.1;white-space:nowrap;overflow:hidden;height:58px}
+#judge.wait #jBand::after{content:"";position:absolute;right:18px;top:24px;border:11px solid transparent;border-top:15px solid #fff;border-bottom:0;animation:nx .6s infinite alternate}
+
+/* ---- 暗転 ---- */
+#fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:60;transition-property:opacity;transition-timing-function:ease-in-out;display:flex;align-items:center;justify-content:center}
+#fade.on{opacity:1;pointer-events:auto;cursor:pointer}
+#fade.fast{transition-duration:120ms!important}
+#fadeTx{font-family:"KPDela",sans-serif;font-weight:400;font-size:64px;line-height:1.8;color:#fff;opacity:0;transform:skewX(-12deg) translateX(-60px);transition:opacity .35s,transform .45s cubic-bezier(.2,1.3,.4,1);border-bottom:6px solid #d7141f;white-space:nowrap}
+#fadeTx.on{opacity:1;transform:skewX(-12deg)}
+
+/* ---- スタッフロール ---- */
+#roll{position:absolute;inset:0;background:#000;display:none;z-index:25;overflow:hidden}
+#roll.on{display:block}
+#rollIn{position:absolute;left:383px;width:600px;top:0;text-align:center;color:#fff}
+#rollIn .rbig{font-family:"KPDela",sans-serif;font-weight:400;font-size:64px;line-height:1.6;margin-bottom:120px;color:#fff;-webkit-text-stroke:2px #d7141f}
+#rollIn .rk{font-size:20px;color:#ff5a63;margin-top:70px;line-height:2}
+#rollIn .rv{font-family:"KPDela",sans-serif;font-weight:400;font-size:34px;line-height:2}
+#rollIn .rs{font-size:16px;color:#aaa;line-height:2}
+#rollIn .rp{margin:22px 0}
+#rollIn .rpn{display:inline-block;padding:0 16px;background:#fff;color:#d7141f;font-size:16px;line-height:2;transform:skewX(-12deg)}
+#rollIn .rpm{font-family:"KPDela",sans-serif;font-weight:400;font-size:30px;line-height:2}
+#rollIn .rend{font-family:"KPDela",sans-serif;font-weight:400;font-size:44px;margin-top:300px;line-height:1.8;color:#fff}
+.rside{position:absolute;top:110px;height:600px;opacity:0;filter:drop-shadow(8px 8px 0 #d7141f)}
+#rollL{left:20px}#rollR{right:20px}
+.rside.on{animation:rside 3.4s ease-out both}
+@keyframes rside{0%{opacity:0;translate:0 40px}15%,80%{opacity:1;translate:0 0}100%{opacity:0;translate:0 -20px}}
+#skipBtn{z-index:70}
+.hud.btn{line-height:48px}

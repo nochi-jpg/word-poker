@@ -6,6 +6,11 @@
     grades: ["低学年"],                // 選べる学年
     eps: [1],                         // 見られる話
     best: {},                         // 学年ごとの最高 {score, rank}
+    hard: [],                         // 選べるハードの学年（高学年ノーマルをノーコンクリアで 低学年から）
+    bestHard: {},                     // ハードの最高 {score, rank}
+    hardHint: false,                  // ハードボタンの強調を見せたか（初回だけ）
+    hardNew: false,                   // ハードが解禁されたばかり（つぎの学年選択で強調）
+    allClear: false,
     howto: {},                        // 学年ごとに あそびかたを見たか
     opt: { vol: 5, lite: false },
     run: null,                        // 中断データ
