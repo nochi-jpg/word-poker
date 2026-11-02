@@ -16,6 +16,11 @@ https://claude.ai/artifact/Mn3KAQ54vxpKrTKtc4xGP3
 
 | 場所 | 中身 |
 | --- | --- |
+| `game/` | **本番**のソース（index.html・css・js・素材・three.js・フォント） |
+| `dist/kotoba-poker.html` | **本番**の配布用ファイル。three.js・フォント・画像をすべて埋め込んだ1ファイル。ダブルクリックで動く |
+| `tools/build.py` | `game/` から `dist/kotoba-poker.html` を作る |
+| `tools/make_fonts.py` | ゲームで使う文字だけのフォント（woff2）を作る。文章やカードを変えたら実行 |
+| `tools/check_layout.js` | 自動チェック（かぶり・はみだし・画面外のボタン、通しプレイ） |
 | `prototypes/judge-test-mid/` | 判定テスト（中学年カード42枚・全文リスト・判定がおかしい文の報告） |
 | `prototypes/judge-test-high/` | 判定テスト（高学年・名詞をくわしくする語を重ねる・24枚デッキモード） |
 | `prototypes/battle-mid/` | 旧案（スレスパ風の3連戦）の試作。カードデータと判定は流用できる |
@@ -27,6 +32,18 @@ https://claude.ai/artifact/Mn3KAQ54vxpKrTKtc4xGP3
 | `assets/source/` | 元の素材（立ち絵シート・ロゴ・ショップ・テクスチャ・第1話の教室背景） |
 | `docs/HANDOFF.md` | 別のチャットで続きを始めるための引き継ぎ文 |
 
+## 本番の作り方・確かめ方
+
+```
+python tools/make_fonts.py        # 文字を変えたとき
+python tools/build.py             # → dist/kotoba-poker.html
+node tools/check_layout.js        # 画面ごとのレイアウトチェック（1366×768 と スマホ横 915×412）
+node tools/check_layout.js --play 高学年 --shots out   # 通しプレイ＋スクリーンショット
+```
+
+`game/js` の中身：`data.js`（カード・学年・ディーラー）、`logic.js`（判定・得点・ディーラーの文・山札）、`save.js`（セーブ）、
+`stage3d.js`（3Dの教室・カメラ）、`ui.js`（文字ウインドウ・ポップアップ・カットイン）、`story.js`（おはなし）、`battle.js`（対戦・ショップ・クリア）、`main.js`（タイトル・学年選択・あそびかた・オプション）。
+
 ## 試作の動かし方
 
 `prototypes/classroom/` は画像を相対パスで読むので、フォルダごとローカルサーバーで開く。
@@ -37,7 +54,7 @@ python -m http.server 8000
 # → http://localhost:8000/
 ```
 
-3Dライブラリ（three.js r128）はCDNから読んでいる。勤務校のi-フィルター環境では本番でファイルに同梱する。
+3Dライブラリ（three.js r128）は試作ではCDNから読んでいる。本番（`dist/`）はファイルに同梱ずみ。
 
 ## 立ち絵シートの番号
 
