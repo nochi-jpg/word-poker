@@ -59,8 +59,8 @@
   const pickDist = d => { let x = rnd(), acc = 0; for (const [k, v] of Object.entries(d)) { acc += v; if (x <= acc) return +k; } return +Object.keys(d).pop(); };
 
   // ---- ディーラーの文：語数と成立をくじで決めて、同じカードデータから作る ----
-  KP.dealerSentence = function (grade, dIdx) {
-    const g = KP.GRADES[grade], d = g.dealer[dIdx], len = pickDist(d.len), wantOk = rnd() < d.ok;
+  KP.dealerSentence = function (grade, dIdx, hard) {
+    const g = KP.GRADES[grade], d = (hard ? g.hard : g.dealer)[dIdx], len = pickDist(d.len), wantOk = rnd() < d.ok;
     const P = g.pool, S_ = P.filter(c => c.r === "S"), M_ = P.filter(c => c.r === "M"), V_ = P.filter(c => c.r === "P"), N_ = P.filter(c => c.r === "N");
     for (let k = 0; k < 8000; k++) {
       const rest = len - 2;
@@ -101,7 +101,13 @@
   };
   KP.newDeck = function (grade) {
     const g = KP.GRADES[grade];
-    return g.startDeck ? g.startDeck.slice() : KP.shuffle(g.pool.map(c => c.w)).slice(0, g.deckSize);
+    if (g.startDeck) return g.startDeck.slice();
+    // ランダムなデッキでも、主語と述語を3まいずつは入れる（文が作れない手札を防ぐ）
+    for (let k = 0; k < 50; k++) {
+      const d = KP.shuffle(g.pool.map(c => c.w)).slice(0, g.deckSize), cs = d.map(w => KP.card(grade, w));
+      if (cs.filter(c => c.r === "S").length >= 3 && cs.filter(c => c.r === "P").length >= 3) return d;
+    }
+    return KP.shuffle(g.pool.map(c => c.w)).slice(0, g.deckSize);
   };
   KP.shopOffer = function (grade, deck) {
     const rest = KP.GRADES[grade].pool.map(c => c.w).filter(w => !deck.includes(w));

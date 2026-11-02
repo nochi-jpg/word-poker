@@ -113,18 +113,23 @@ window.KP = window.KP || {};
     低学年: {
       key: "low", pool: LOW, deckSize: 16, startDeck: null, hand: 5, swaps: Infinity, maxM: 2, adj: false, burst: false, shop: false,
       dealer: [{ len: { 2: 1 }, ok: 0.8 }, { len: { 2: 1 }, ok: 0.8 }, { len: { 2: 1 }, ok: 0.8 }, { len: { 2: 0.7, 3: 0.3 }, ok: 0.8 }],
+      // ハード（11/3 シミュレーターで調整：上手な子のノーコンクリア 低46%・中27%・高24%）
+      hard: [{ len: { 2: 0.5, 3: 0.5 }, ok: 0.95 }, { len: { 2: 0.5, 3: 0.5 }, ok: 0.95 }, { len: { 2: 0.4, 3: 0.6 }, ok: 0.95 }, { len: { 3: 0.5, 4: 0.5 }, ok: 0.9 }],
     },
     中学年: {
       key: "mid", pool: MID, startDeck: ["先生が", "子どもが", "友だちが", "私は", "犬が", "ぞうが", "食べた", "見た", "話した", "歩いた", "走った", "読んだ",
         "教室で", "公園で", "きのう", "あさ", "パンを", "本を", "ゆっくり", "大きな声で"],
-      hand: 7, swaps: 8, maxM: 2, adj: false, burst: false, shop: true,
+      hand: 7, swaps: 4, shopSwap: 1, maxM: 2, adj: false, burst: false, shop: true,
       dealer: [{ len: { 2: 0.5, 3: 0.5 }, ok: 0.5 }, { len: { 2: 0.5, 3: 0.5 }, ok: 0.5 }, { len: { 2: 0.5, 3: 0.5 }, ok: 0.65 }, { len: { 2: 0.4, 3: 0.4, 4: 0.2 }, ok: 0.65 }],
+      hard: [{ len: { 3: 0.6, 4: 0.4 }, ok: 0.7 }, { len: { 3: 0.6, 4: 0.4 }, ok: 0.7 }, { len: { 3: 0.5, 4: 0.5 }, ok: 0.85 }, { len: { 3: 0.4, 4: 0.6 }, ok: 0.9 }],
     },
     高学年: {
       key: "high", pool: HIGH, startDeck: ["先生が", "子どもが", "友だちが", "犬が", "ねこが", "私は", "食べた", "歩いた", "話した", "見た", "作った", "読んだ",
         "放課後", "日曜日に", "図書館で", "公園で", "ケーキを", "物語を", "ていねいに", "すこし", "やさしい", "大きな", "おいしい", "新しい"],
-      hand: 8, swaps: 8, maxM: 3, adj: true, burst: true, shop: true,
+      hand: 8, swaps: 3, shopSwap: 1, maxM: 3, adj: true, burst: true, shop: true,
       dealer: [{ len: { 3: 0.5, 4: 0.5 }, ok: 0.25 }, { len: { 3: 0.5, 4: 0.5 }, ok: 0.25 }, { len: { 3: 0.6, 4: 0.4 }, ok: 1 }, { len: { 3: 0.4, 4: 0.4, 5: 0.2 }, ok: 1 }],
+      // ハード：ステージ？（見瀬先 祥子）をふくめて5人
+      hard: [{ len: { 3: 0.4, 4: 0.6 }, ok: 0.5 }, { len: { 3: 0.4, 4: 0.6 }, ok: 0.5 }, { len: { 4: 0.7, 5: 0.3 }, ok: 0.7 }, { len: { 4: 0.65, 5: 0.3, 6: 0.05 }, ok: 0.75 }, { len: { 4: 0.5, 5: 0.4, 6: 0.1 }, ok: 0.85 }],
     },
   };
   KP.GRADE_LIST = ["低学年", "中学年", "高学年"];
