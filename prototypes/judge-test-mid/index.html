@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ことばポーカー 判定テスト</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Meiryo",sans-serif;background:#1e2333;color:#f2f2f2;display:flex;justify-content:center}
+#app{width:100%;max-width:900px;height:100dvh;display:grid;grid-template-rows:52px 1fr;padding:8px;gap:8px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tab{height:44px;border:none;border-radius:10px;background:#2e3550;color:#ccd;font-size:15px;font-weight:bold;cursor:pointer}
+.tab.on{background:#f5c542;color:#222}
+.page{display:none;min-height:0}
+.tabs>*,.page>*,.bar>*,.slots>*,.hand>*,.foot>*,.pager>*,.rows>*,.r>*,.box>*,.row>*{min-width:0}
+.r .sub{font-size:11px;color:#ffb3ad;height:14px;line-height:14px}
+.page.on{display:grid}
+/* あそぶ */
+#play{grid-template-rows:40px 1fr auto 56px auto 56px;gap:8px}
+.bar{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.bar button,.btn{height:40px;border:none;border-radius:10px;background:#3b4466;color:#fff;font-size:14px;font-weight:bold;cursor:pointer}
+.sentence{display:flex;align-items:center;justify-content:center;background:#141826;border-radius:12px;padding:8px;min-height:0}
+.sentence .fit{font-size:26px;font-weight:bold;white-space:nowrap;overflow:hidden;width:100%;text-align:center}
+.slots{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:6px}
+.slot{height:64px;border-radius:10px;border:2px dashed #667;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:2px 4px;overflow:hidden}
+.slot .lb{font-size:11px;color:#aab;height:14px;line-height:14px}
+.slot .fit{font-size:17px;font-weight:bold;white-space:nowrap;overflow:hidden;width:100%;text-align:center;height:26px;line-height:26px}
+.slot.full{border-style:solid}
+.slot.full .lb{color:#333}
+.lb{white-space:nowrap;overflow:hidden}
+.judge{height:56px;border:none;border-radius:12px;background:#f5c542;color:#222;font-size:20px;font-weight:bold;cursor:pointer}
+.judge:disabled{background:#555;color:#999}
+.hand{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.card{height:72px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:#222;padding:2px 4px;overflow:hidden;border:3px solid transparent}
+.card .lb{font-size:11px;height:14px;line-height:14px;opacity:.75}
+.card .fit{font-size:17px;font-weight:bold;white-space:nowrap;overflow:hidden;width:100%;text-align:center;height:26px;line-height:26px}
+.card .gp{font-size:10px;height:13px;line-height:13px;opacity:.6}
+.card.used{opacity:.25;cursor:default}
+.S{background:#ff8a80}.M{background:#ffe082}.P{background:#82b1ff}
+.slot.S,.slot.M,.slot.P{color:#222}
+.foot{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.foot button{height:56px}
+/* 結果 */
+#res{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:16px}
+#res.on{display:flex}
+.box{width:100%;max-width:440px;background:#262c42;border-radius:16px;padding:16px;display:grid;gap:10px}
+.box .big{font-size:30px;font-weight:bold;text-align:center;height:44px;line-height:44px}
+.box .fit{font-size:18px;text-align:center;white-space:nowrap;overflow:hidden;height:28px;line-height:28px}
+.box .why{font-size:14px;color:#ccd;min-height:40px;text-align:center}
+.box .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.box button{height:48px;font-size:15px}
+.ok{color:#7ee787}.ng{color:#ff7b72}
+/* リスト */
+#list,#rep{grid-template-rows:40px 1fr 48px;gap:8px}
+.rows{display:grid;grid-template-rows:repeat(8,1fr);gap:4px;min-height:0}
+.r{display:grid;grid-template-columns:1fr 64px;gap:6px;align-items:center;background:#262c42;border-radius:8px;padding:0 8px;min-height:0;overflow:hidden}
+.r .fit{font-size:16px;white-space:nowrap;overflow:hidden}
+.r button{height:32px;border:none;border-radius:8px;background:#3b4466;color:#fff;font-size:12px;font-weight:bold;cursor:pointer}
+.r.flag{background:#5a2b33}
+.r.flag button{background:#ff7b72;color:#222}
+.pager{display:grid;grid-template-columns:72px 1fr 72px;gap:6px;align-items:center}
+.pager .btn{height:48px}
+.pager .info{text-align:center;font-size:14px}
+.info2{display:flex;align-items:center;justify-content:center;font-size:14px;color:#ccd;text-align:center}
+@media (max-width:560px){
+ #play{grid-template-rows:40px 1fr auto 56px auto 56px}
+ .hand{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+<div id="app">
+ <div class="tabs">
+  <button class="tab on" data-p="play">あそぶ</button>
+  <button class="tab" data-p="list">全文リスト</button>
+  <button class="tab" data-p="rep">報告</button>
+ </div>
+
+ <section class="page on" id="play">
+  <div class="bar">
+   <button id="modBtn">修飾語の枠：2</button>
+   <button id="infoBtn">この手札でできる文：-</button>
+  </div>
+  <div class="sentence"><div class="fit" id="sen">カードをタップして文をつくろう</div></div>
+  <div class="slots" id="slots"></div>
+  <button class="judge" id="judge" disabled>いけ！（判定）</button>
+  <div class="hand" id="hand"></div>
+  <div class="foot">
+   <button class="btn" id="clear">枠をもどす</button>
+   <button class="btn" id="deal">配り直す</button>
+  </div>
+ </section>
+
+ <section class="page" id="list">
+  <div class="bar">
+   <button id="listMode">表示：自然（順番）</button>
+   <button id="listCount">-</button>
+  </div>
+  <div class="rows" id="rows"></div>
+  <div class="pager"><button class="btn" id="prev">◀</button><div class="info" id="pinfo"></div><button class="btn" id="next">▶</button></div>
+ </section>
+
+ <section class="page" id="rep">
+  <div class="info2" id="repInfo">判定がおかしい文を報告すると、ここにたまります</div>
+  <div class="rows" id="repRows"></div>
+  <div class="pager"><button class="btn" id="rprev">◀</button><button class="btn" id="copy">コピーしてClaudeにわたす</button><button class="btn" id="rnext">▶</button></div>
+ </section>
+</div>
+
+<div id="res"><div class="box">
+ <div class="big" id="rBig"></div>
+ <div class="fit" id="rSen"></div>
+ <div class="why" id="rWhy"></div>
+ <div class="row"><button class="btn" id="agree">判定に なっとく</button><button class="btn" id="disagree">判定が おかしい</button></div>
+</div></div>
+
+<script>
+// ===== カードデータ =====
+// 主語 S: tag = ひと/どうぶつ/もの/こと
+// 修飾語 M: kind = 種類, cs = 助詞（を/に/で 同じ助詞は2つ使えない）
+// 述語 P: subj = 受け入れる主語タグ, mods = 受け入れる修飾語の種類
+const C=[
+ // どうぶつ
+ {g:"どうぶつ",r:"S",w:"ぞうが",b:"ぞう",tag:"どうぶつ"},
+ {g:"どうぶつ",r:"S",w:"さるが",b:"さる",tag:"どうぶつ"},
+ {g:"どうぶつ",r:"S",w:"犬が",b:"犬",tag:"どうぶつ"},
+ {g:"どうぶつ",r:"M",w:"りんごを",b:"りんご",kind:"たべもの",cs:"を"},
+ {g:"どうぶつ",r:"M",w:"バナナを",b:"バナナ",kind:"たべもの",cs:"を"},
+ {g:"どうぶつ",r:"M",w:"ゆっくり",b:"ゆっくり",kind:"ようす"},
+ {g:"どうぶつ",r:"M",w:"どうぶつえんで",b:"どうぶつえん",kind:"ばしょ",cs:"で"},
+ {g:"どうぶつ",r:"P",w:"食べた",subj:["ひと","どうぶつ"],mods:["たべもの","ようす","とき","ばしょ"]},
+ {g:"どうぶつ",r:"P",w:"走った",subj:["ひと","どうぶつ"],mods:["ようす","とき","ばしょ"]},
+ {g:"どうぶつ",r:"P",w:"ねむった",subj:["ひと","どうぶつ"],mods:["とき","ばしょ"]},
+ {g:"どうぶつ",r:"P",w:"鳴いた",subj:["どうぶつ"],mods:["こえ","とき","ばしょ"]},
+ {g:"どうぶつ",r:"P",w:"大きい",subj:["ひと","どうぶつ","もの"],mods:["ていど"]},
+ // がっこう
+ {g:"がっこう",r:"S",w:"先生が",b:"先生",tag:"ひと"},
+ {g:"がっこう",r:"S",w:"子どもが",b:"子ども",tag:"ひと"},
+ {g:"がっこう",r:"S",w:"友だちが",b:"友だち",tag:"ひと"},
+ {g:"がっこう",r:"M",w:"教室で",b:"教室",kind:"ばしょ",cs:"で"},
+ {g:"がっこう",r:"M",w:"大きな声で",b:"声",kind:"こえ",ng:["しずか"]},
+ {g:"がっこう",r:"M",w:"きのう",b:"きのう",kind:"とき"},
+ {g:"がっこう",r:"M",w:"友だちに",b:"友だち",kind:"あいて",cs:"に"},
+ {g:"がっこう",r:"P",w:"歩いた",subj:["ひと","どうぶつ"],mods:["ようす","とき","ばしょ"]},
+ {g:"がっこう",r:"P",w:"歌った",subj:["ひと"],mods:["こえ","とき","ばしょ"]},
+ {g:"がっこう",r:"P",w:"話した",subj:["ひと"],mods:["あいて","こえ","ようす","とき","ばしょ"]},
+ {g:"がっこう",r:"P",w:"見た",subj:["ひと","どうぶつ"],mods:["たべもの","もの","ようす","とき","ばしょ"]},
+ // べんきょう
+ {g:"べんきょう",r:"S",w:"算数が",b:"算数",tag:"こと"},
+ {g:"べんきょう",r:"S",w:"漢字が",b:"漢字",tag:"こと"},
+ {g:"べんきょう",r:"S",w:"本が",b:"本",tag:"もの"},
+ {g:"べんきょう",r:"S",w:"私は",b:"私",tag:"ひと"},
+ {g:"べんきょう",r:"M",w:"本を",b:"本",kind:"もの",cs:"を"},
+ {g:"べんきょう",r:"M",w:"作文を",b:"作文",kind:"もの",cs:"を"},
+ {g:"べんきょう",r:"M",w:"しずかに",b:"しずか",kind:"ようす"},
+ {g:"べんきょう",r:"M",w:"とても",b:"とても",kind:"ていど"},
+ {g:"べんきょう",r:"M",w:"きょう",b:"きょう",kind:"とき"},
+ {g:"べんきょう",r:"P",w:"むずかしい",subj:["こと","もの"],mods:["ていど"]},
+ {g:"べんきょう",r:"P",w:"おもしろい",subj:["こと","もの","ひと","どうぶつ"],mods:["ていど"]},
+ {g:"べんきょう",r:"P",w:"読んだ",subj:["ひと"],mods:["もの","ようす","こえ","とき","ばしょ"]},
+ {g:"べんきょう",r:"P",w:"書いた",subj:["ひと"],mods:["もの","ようす","とき","ばしょ"]},
+];
+C.forEach((c,i)=>c.id=i);
+const RL={S:"主語",M:"修飾語",P:"述語"};
+// 修飾語は自然な順に自動でならべる
+const ORD=["とき","ばしょ","あいて","たべもの","もの","こえ","ようす","ていど"];
+
+// ===== 判定 =====
+function judge(s,ms,p){
+ const why=[];
+ if(!s) why.push("主語がない");
+ if(!p) why.push("述語がない");
+ if(why.length) return {ok:false,why};
+ if(!p.subj.includes(s.tag)) why.push(`「${s.w}」（${s.tag}）は「${p.w}」の主語になれない`);
+ const kinds=new Set(),cs=new Set();
+ for(const m of ms){
+  if(!p.mods.includes(m.kind)) why.push(`「${m.w}」（${m.kind}）は「${p.w}」をくわしくできない`);
+  if(kinds.has(m.kind)) why.push(`同じ種類の修飾語（${m.kind}）が2つある`);
+  if(m.cs&&cs.has(m.cs)) why.push(`「${m.cs}」が2つある`);
+  if(m.b===s.b) why.push(`「${s.b}」が2回出てくる`);
+  for(const o of ms) if(m.ng&&m.ng.includes(o.b)) why.push(`「${m.w}」と「${o.w}」は意味がぶつかる`);
+  kinds.add(m.kind); if(m.cs) cs.add(m.cs);
+ }
+ return {ok:why.length===0,why};
+}
+const sortM=ms=>[...ms].sort((a,b)=>ORD.indexOf(a.kind)-ORD.indexOf(b.kind));
+const text=(s,ms,p)=>[s,...sortM(ms),p].filter(Boolean).map(c=>c.w).join(" ");
+
+// 手札から作れる自然な文をすべて数える
+function allFrom(cards,maxM){
+ const S=cards.filter(c=>c.r==="S"),M=cards.filter(c=>c.r==="M"),P=cards.filter(c=>c.r==="P");
+ const sets=[[]];
+ if(maxM>=1) M.forEach(m=>sets.push([m]));
+ if(maxM>=2) for(let i=0;i<M.length;i++)for(let j=i+1;j<M.length;j++)sets.push([M[i],M[j]]);
+ const ok=[],ng=[];
+ for(const s of S)for(const p of P)for(const ms of sets){
+  const t=text(s,ms,p); (judge(s,ms,p).ok?ok:ng).push(t);
+ }
+ return {ok,ng};
+}
+
+// ===== 文字はみだし防止 =====
+function fit(el){
+ const base=parseFloat(el.dataset.fs||getComputedStyle(el).fontSize);
+ el.dataset.fs=base; el.style.fontSize=base+"px";
+ let f=base; while(el.scrollWidth>el.clientWidth&&f>9){f-=1;el.style.fontSize=f+"px"}
+}
+const fitAll=root=>root.querySelectorAll(".fit").forEach(fit);
+
+// ===== 保存（使えない環境でも動くように） =====
+let flags=[];
+try{flags=JSON.parse(localStorage.getItem("wp_flags")||"[]")}catch(e){}
+const save=()=>{try{localStorage.setItem("wp_flags",JSON.stringify(flags))}catch(e){}};
+function toggleFlag(t,ok){
+ const i=flags.findIndex(f=>f.t===t);
+ if(i>=0) flags.splice(i,1); else flags.push({t,soft:ok?"自然":"不自然"});
+ save();
+}
+
+// ===== あそぶ =====
+let maxM=2,hand=[],slot={S:null,M:[],P:null};
+const $=id=>document.getElementById(id);
+function deal(){
+ for(let k=0;k<500;k++){
+  const pool=[...C].sort(()=>Math.random()-.5);
+  hand=pool.slice(0,6);
+  if(maxM===0) hand=pool.filter(c=>c.r!=="M").slice(0,6);
+  if(allFrom(hand,maxM).ok.length>0) break;
+ }
+ slot={S:null,M:[],P:null}; render();
+}
+function render(){
+ // 枠
+ const sl=$("slots"); const keys=["S",...Array(maxM).fill("M"),"P"];
+ sl.style.setProperty("--n",keys.length); sl.innerHTML="";
+ let mi=0;
+ keys.forEach(k=>{
+  const c=k==="M"?slot.M[mi++]:slot[k];
+  const d=document.createElement("div");
+  d.className="slot"+(c?" full "+k:"");
+  d.innerHTML=`<div class="lb">${k==="M"?"修飾語":k==="S"?"主語":"述語"}</div><div class="fit">${c?c.w:"　"}</div>`;
+  if(c) d.onclick=()=>{ if(k==="M") slot.M=slot.M.filter(x=>x!==c); else slot[k]=null; render(); };
+  sl.appendChild(d);
+ });
+ // 手札
+ const h=$("hand"); h.innerHTML="";
+ const used=new Set([slot.S,slot.P,...slot.M].filter(Boolean).map(c=>c.id));
+ hand.forEach(c=>{
+  const d=document.createElement("div");
+  d.className="card "+c.r+(used.has(c.id)?" used":"");
+  d.innerHTML=`<div class="lb">${RL[c.r]}</div><div class="fit">${c.w}</div><div class="gp">${c.g}</div>`;
+  if(!used.has(c.id)) d.onclick=()=>{
+   if(c.r==="M"){ if(maxM===0) return; if(slot.M.length<maxM) slot.M.push(c); else slot.M[maxM-1]=c; }
+   else slot[c.r]=c;
+   render();
+  };
+  h.appendChild(d);
+ });
+ const t=text(slot.S,slot.M,slot.P);
+ $("sen").textContent=t||"カードをタップして文をつくろう";
+ $("judge").disabled=!(slot.S&&slot.P);
+ $("infoBtn").textContent="この手札でできる文："+allFrom(hand,maxM).ok.length;
+ $("modBtn").textContent="修飾語の枠："+maxM;
+ fitAll(document.getElementById("play"));
+}
+let last=null;
+$("judge").onclick=()=>{
+ const r=judge(slot.S,slot.M,slot.P), t=text(slot.S,slot.M,slot.P);
+ last={t,ok:r.ok};
+ $("rBig").innerHTML=r.ok?'<span class="ok">○ 自然な文！</span>':'<span class="ng">× へんな文…</span>';
+ $("rSen").textContent=t; $("rWhy").textContent=r.ok?"主語と述語がつながったよ":r.why[0];
+ $("res").classList.add("on"); fitAll($("res"));
+};
+$("agree").onclick=()=>{$("res").classList.remove("on");deal()};
+$("disagree").onclick=()=>{ if(!flags.some(f=>f.t===last.t)) toggleFlag(last.t,last.ok); $("res").classList.remove("on"); deal(); };
+$("clear").onclick=()=>{slot={S:null,M:[],P:null};render()};
+$("deal").onclick=deal;
+$("modBtn").onclick=()=>{maxM=(maxM+1)%3;deal()};
+$("infoBtn").onclick=()=>{};
+
+// ===== 全文リスト =====
+let lmode="ok",lpage=0,ALL=null;
+function buildAll(){ ALL=allFrom(C,2); }
+let randArr=[];
+const LM={ok:"表示：自然（順番）",rand:"表示：自然（ランダム）",ng:"表示：不自然（順番）"};
+function renderList(){
+ if(lmode==="rand"&&!randArr.length) randArr=[...ALL.ok].sort(()=>Math.random()-.5).slice(0,8);
+ const arr=lmode==="rand"?randArr:ALL[lmode], per=8, pages=lmode==="rand"?1:Math.max(1,Math.ceil(arr.length/per));
+ lpage=Math.min(lpage,pages-1);
+ $("listMode").textContent=LM[lmode];
+ $("listCount").textContent=`自然 ${ALL.ok.length}／不自然 ${ALL.ng.length}`;
+ $("pinfo").textContent=lmode==="rand"?"▶で引き直し":`${lpage+1} / ${pages}`;
+ const rows=$("rows"); rows.innerHTML="";
+ arr.slice(lpage*per,lpage*per+per).forEach(t=>{
+  const f=flags.some(x=>x.t===t);
+  const d=document.createElement("div"); d.className="r"+(f?" flag":"");
+  d.innerHTML=`<div class="fit">${t}</div><button>${f?"報告ずみ":"おかしい"}</button>`;
+  d.querySelector("button").onclick=()=>{toggleFlag(t,lmode!=="ng");renderList()};
+  rows.appendChild(d);
+ });
+ fitAll(rows);
+}
+$("listMode").onclick=()=>{lmode={ok:"rand",rand:"ng",ng:"ok"}[lmode];lpage=0;randArr=[];renderList()};
+$("listCount").onclick=()=>{};
+$("prev").onclick=()=>{lpage=Math.max(0,lpage-1);renderList()};
+$("next").onclick=()=>{if(lmode==="rand")randArr=[];else lpage++;renderList()};
+// 1ページ目↔最後のページ（▶長押しは使わず、端で止める）
+
+// ===== 報告 =====
+let rpage=0;
+function renderRep(){
+ const per=8,pages=Math.max(1,Math.ceil(flags.length/per)); rpage=Math.min(rpage,pages-1);
+ $("repInfo").textContent=flags.length?`報告 ${flags.length}件（${rpage+1}/${pages}ページ）`:"判定がおかしい文を報告すると、ここにたまります";
+ const rows=$("repRows"); rows.innerHTML="";
+ flags.slice(rpage*per,rpage*per+per).forEach(f=>{
+  const d=document.createElement("div"); d.className="r flag";
+  d.innerHTML=`<div><div class="fit">${f.t}</div><div class="sub">ソフトの判定：${f.soft}</div></div><button>とりけし</button>`;
+  d.querySelector("button").onclick=()=>{toggleFlag(f.t);renderRep()};
+  rows.appendChild(d);
+ });
+ fitAll(rows);
+}
+$("rprev").onclick=()=>{rpage=Math.max(0,rpage-1);renderRep()};
+$("rnext").onclick=()=>{rpage++;renderRep()};
+$("copy").onclick=()=>{
+ const t="判定がおかしい文：\n"+flags.map(f=>`・${f.t}（ソフトは${f.soft}と判定）`).join("\n");
+ const done=()=>{$("copy").textContent="コピーしました";setTimeout(()=>$("copy").textContent="コピーしてClaudeにわたす",1500)};
+ const fb=()=>{ $("repRows").innerHTML=`<textarea style="grid-row:1/-1;width:100%;height:100%;font-size:14px;padding:8px;border-radius:8px" readonly></textarea>`; const ta=$("repRows").querySelector("textarea"); ta.value=t; ta.select(); $("repInfo").textContent="自動コピーできないので、長押しでコピーしてください"; };
+ try{ navigator.clipboard.writeText(t).then(done).catch(fb); }catch(e){ fb(); }
+};
+
+// ===== タブ =====
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
+ document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===b));
+ document.querySelectorAll(".page").forEach(p=>p.classList.toggle("on",p.id===b.dataset.p));
+ if(b.dataset.p==="list") renderList();
+ if(b.dataset.p==="rep") renderRep();
+ if(b.dataset.p==="play") fitAll($("play"));
+});
+window.addEventListener("resize",()=>{document.querySelectorAll(".fit").forEach(e=>{delete e.dataset.fs;e.style.fontSize=""});fitAll(document.body)});
+buildAll(); deal();
+</script>
+</body>
+</html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ことばポーカー 試作バトル</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Meiryo",sans-serif;background:#1e2333;color:#f2f2f2;display:flex;justify-content:center;user-select:none}
+#app{width:100%;max-width:900px;height:100dvh;display:grid;grid-template-rows:36px 1fr 48px 60px 52px auto;gap:6px;padding:8px}
+#app>*,.top>*,.enemy>*,.einfo>*,.slots>*,.acts>*,.hand>*,.gwords>*,.box>*{min-width:0}
+.fit{white-space:nowrap;overflow:hidden}
+/* 上のバー */
+.top{display:grid;grid-template-columns:1fr 92px 92px;gap:6px}
+.chip{height:36px;border-radius:10px;background:#2e3550;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold}
+.gauge{position:relative;height:36px;border-radius:10px;background:#141826;overflow:hidden}
+.gauge .fill{position:absolute;inset:0 auto 0 0;background:#4caf50;transition:width .3s}
+.gauge .txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;text-shadow:0 1px 2px #000}
+/* 敵 */
+.enemy{background:#141826;border-radius:14px;display:grid;grid-template-columns:38% 1fr;gap:8px;padding:10px;align-items:center;min-height:0}
+.emoji{font-size:min(96px,18vh);text-align:center;line-height:1;transition:transform .15s}
+.emoji.hit{transform:translateX(8px) rotate(8deg)}
+.einfo{display:grid;grid-template-rows:28px 28px 36px 36px;gap:6px}
+.ename{font-size:18px;font-weight:bold;line-height:28px}
+.egauge{height:28px}.egauge .fill{background:#e53935}
+.intent,.weak{height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;padding:0 6px}
+.intent{background:#5a2b33}
+.weak{background:#2e3550;color:#aab}
+.weak.on{background:#f5c542;color:#222}
+/* 文 */
+.sentence{display:flex;align-items:center;justify-content:center;background:#141826;border-radius:12px;padding:0 10px}
+.sentence .fit{font-size:22px;font-weight:bold;width:100%;text-align:center}
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.slot{height:60px;border-radius:10px;border:2px dashed #667;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:2px 4px;overflow:hidden}
+.slot .lb{font-size:11px;color:#aab;height:14px;line-height:14px}
+.slot .fit{font-size:17px;font-weight:bold;width:100%;text-align:center;height:24px;line-height:24px}
+.slot.full{border-style:solid;color:#222}.slot.full .lb{color:#333}
+.acts{display:grid;grid-template-columns:1fr 2fr;gap:6px}
+.acts button{height:52px;border:none;border-radius:12px;font-size:17px;font-weight:bold;cursor:pointer}
+#swapBtn{background:#3b4466;color:#fff}
+#goBtn{background:#f5c542;color:#222}
+#goBtn:disabled,#swapBtn:disabled{background:#444;color:#888}
+.hand{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.card{height:70px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:#222;padding:2px 4px;overflow:hidden;border:3px solid transparent}
+.card .lb{font-size:11px;height:14px;line-height:14px;opacity:.75;width:100%;text-align:center}
+.card .fit{font-size:17px;font-weight:bold;width:100%;text-align:center;height:24px;line-height:24px}
+.card .gp{font-size:10px;height:14px;line-height:14px;opacity:.7;width:100%;text-align:center}
+.card.used{opacity:.2;cursor:default}
+.card.mark{border-color:#fff;transform:translateY(-4px)}
+.card.empty{background:transparent;border:2px dashed #333;cursor:default}
+.S{background:#ff8a80}.M{background:#ffe082}.P{background:#82b1ff}
+@media (max-width:560px){.hand{grid-template-columns:repeat(4,1fr)}}
+/* メッセージ（逆転裁判風） */
+#msg{position:fixed;inset:0;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.35);padding:8px}
+#msg.on{display:flex}
+.mbox{width:100%;max-width:884px;height:150px;background:#10131f;border:3px solid #f5c542;border-radius:14px;padding:10px 12px;display:grid;grid-template-rows:22px 1fr 40px;gap:4px;cursor:pointer}
+.mname{font-size:14px;color:#f5c542;font-weight:bold;height:22px;line-height:22px}
+.mtext{font-size:17px;line-height:1.5;overflow:hidden}
+.mnext{justify-self:end;width:120px;height:40px;border:none;border-radius:10px;background:#f5c542;color:#222;font-size:15px;font-weight:bold;cursor:pointer}
+/* ガード */
+#guard{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.75);padding:12px}
+#guard.on{display:flex}
+.gbox{width:100%;max-width:560px;background:#262c42;border-radius:16px;padding:14px;display:grid;gap:10px}
+.gtitle{font-size:22px;font-weight:bold;text-align:center;color:#ff7b72;height:32px;line-height:32px}
+.gsub{font-size:14px;text-align:center;color:#ccd;height:20px;line-height:20px}
+.gwords{display:grid;gap:6px}
+.gwords button{height:60px;border:none;border-radius:10px;background:#f2f2f2;color:#222;font-size:18px;font-weight:bold;cursor:pointer;padding:0 4px}
+.gwords button.right{background:#7ee787}.gwords button.wrong{background:#ff7b72}
+.gwords button .fit{width:100%;text-align:center}
+#reward{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.75);padding:12px}
+#reward.on{display:flex}
+.rcards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.rcards>*{min-width:0}
+.rcards .card{height:84px}
+.rskip{height:48px;border:none;border-radius:10px;background:#3b4466;color:#fff;font-size:15px;font-weight:bold;cursor:pointer}
+.gq{font-size:20px;font-weight:bold;text-align:center;color:#f5c542;height:30px;line-height:30px}
+</style>
+</head>
+<body>
+<div id="app">
+ <div class="top">
+  <div class="gauge" id="pg"><div class="fill"></div><div class="txt"></div></div>
+  <div class="chip" id="stage"></div>
+  <div class="chip" id="swaps"></div>
+ </div>
+ <div class="enemy">
+  <div class="emoji" id="eEmoji"></div>
+  <div class="einfo">
+   <div class="ename fit" id="eName"></div>
+   <div class="gauge egauge" id="eg"><div class="fill"></div><div class="txt"></div></div>
+   <div class="intent fit" id="intent"></div>
+   <div class="weak fit" id="weak"></div>
+  </div>
+ </div>
+ <div class="sentence"><div class="fit" id="sen"></div></div>
+ <div class="slots" id="slots"></div>
+ <div class="acts"><button id="swapBtn"></button><button id="goBtn">いけ！</button></div>
+ <div class="hand" id="hand"></div>
+</div>
+
+<div id="msg"><div class="mbox" id="mbox"><div class="mname" id="mname"></div><div class="mtext" id="mtext"></div><button class="mnext">つぎへ ▶</button></div></div>
+<div id="reward"><div class="gbox">
+ <div class="gtitle fit" id="rtitle" style="color:#f5c542"></div>
+ <div class="gsub fit">あたらしい ことばを デッキに くわえよう</div>
+ <div class="rcards" id="rcards"></div>
+ <button class="rskip" id="rskip">えらばない</button>
+</div></div>
+<div id="guard"><div class="gbox">
+ <div class="gtitle" id="gtitle"></div>
+ <div class="gsub fit">正しく えらぶと ダメージ半分！</div>
+ <div class="gq" id="gq"></div>
+ <div class="gwords" id="gwords"></div>
+</div></div>
+
+<script>
+// ===== カードデータ（判定テストと同じ） =====
+const C=[
+ {r:"S",w:"ぞうが",b:"ぞう",tag:"どうぶつ"},{r:"S",w:"さるが",b:"さる",tag:"どうぶつ"},{r:"S",w:"犬が",b:"犬",tag:"どうぶつ"},
+ {r:"M",w:"りんごを",b:"りんご",kind:"たべもの",cs:"を"},{r:"M",w:"バナナを",b:"バナナ",kind:"たべもの",cs:"を"},
+ {r:"M",w:"ゆっくり",b:"ゆっくり",kind:"ようす"},{r:"M",w:"どうぶつえんで",b:"どうぶつえん",kind:"ばしょ",cs:"で"},
+ {r:"P",w:"食べた",subj:["ひと","どうぶつ"],mods:["たべもの","ようす","とき","ばしょ"]},
+ {r:"P",w:"走った",subj:["ひと","どうぶつ"],mods:["ようす","とき","ばしょ"]},
+ {r:"P",w:"ねむった",subj:["ひと","どうぶつ"],mods:["とき","ばしょ"]},
+ {r:"P",w:"鳴いた",subj:["どうぶつ"],mods:["こえ","とき","ばしょ"]},
+ {r:"P",w:"大きい",subj:["ひと","どうぶつ","もの"],mods:["ていど"]},
+ {r:"S",w:"先生が",b:"先生",tag:"ひと"},{r:"S",w:"子どもが",b:"子ども",tag:"ひと"},{r:"S",w:"友だちが",b:"友だち",tag:"ひと"},
+ {r:"M",w:"教室で",b:"教室",kind:"ばしょ",cs:"で"},{r:"M",w:"大きな声で",b:"声",kind:"こえ",ng:["しずか"]},
+ {r:"M",w:"きのう",b:"きのう",kind:"とき"},{r:"M",w:"友だちに",b:"友だち",kind:"あいて",cs:"に"},
+ {r:"P",w:"歩いた",subj:["ひと","どうぶつ"],mods:["ようす","とき","ばしょ"]},
+ {r:"P",w:"歌った",subj:["ひと"],mods:["こえ","ようす","とき","ばしょ"]},
+ {r:"P",w:"話した",subj:["ひと"],mods:["あいて","こえ","ようす","とき","ばしょ"]},
+ {r:"P",w:"見た",subj:["ひと","どうぶつ"],mods:["たべもの","もの","ようす","とき","ばしょ"]},
+ {r:"S",w:"算数が",b:"算数",tag:"こと"},{r:"S",w:"漢字が",b:"漢字",tag:"こと"},{r:"S",w:"本が",b:"本",tag:"もの"},{r:"S",w:"私は",b:"私",tag:"ひと"},
+ {r:"M",w:"本を",b:"本",kind:"もの",cs:"を"},{r:"M",w:"作文を",b:"作文",kind:"もの",cs:"を"},
+ {r:"M",w:"しずかに",b:"しずか",kind:"ようす"},{r:"M",w:"きょう",b:"きょう",kind:"とき"},
+ {r:"M",w:"あさ",b:"あさ",kind:"とき"},{r:"M",w:"夜に",b:"夜",kind:"とき",cs:"に"},
+ {r:"M",w:"公園で",b:"公園",kind:"ばしょ",cs:"で"},{r:"M",w:"家で",b:"家",kind:"ばしょ",cs:"で"},
+ {r:"M",w:"パンを",b:"パン",kind:"たべもの",cs:"を"},{r:"M",w:"手紙を",b:"手紙",kind:"もの",cs:"を"},
+ {r:"P",w:"むずかしい",subj:["こと","もの"],mods:["ていど"]},
+ {r:"P",w:"おもしろい",subj:["こと","もの","ひと","どうぶつ"],mods:["ていど"]},
+ {r:"P",w:"読んだ",subj:["ひと"],mods:["もの","ようす","こえ","とき","ばしょ"]},
+ {r:"P",w:"書いた",subj:["ひと"],mods:["もの","ようす","とき","ばしょ"]},
+];
+C.forEach((c,i)=>c.id=i);
+// 子ども向けの修飾語の種類
+const CAT={とき:"いつ",ばしょ:"どこで",あいて:"だれに",たべもの:"なにを",もの:"なにを",こえ:"どのように",ようす:"どのように",ていど:"どのくらい"};
+const ICON={いつ:"🕐",どこで:"📍",だれに:"👤",なにを:"🎁",どのように:"✨",どのくらい:"📏"};
+const ORD=["とき","ばしょ","あいて","たべもの","もの","こえ","ようす","ていど"];
+const MAXM=2; let HAND=6;
+
+function judge(s,ms,p){
+ const why=[];
+ if(!p.subj.includes(s.tag)) why.push(`「${s.w}」は「${p.w}」の主語になれない`);
+ const kinds=new Set(),cs=new Set();
+ for(const m of ms){
+  if(!p.mods.includes(m.kind)) why.push(`「${m.w}」は「${p.w}」をくわしくできない`);
+  if(kinds.has(m.kind)) why.push(`同じ種類の修飾語が2つある`);
+  if(m.cs&&cs.has(m.cs)) why.push(`「${m.cs}」が2つある`);
+  if(m.b===s.b) why.push(`「${s.b}」が2回出てくる`);
+  for(const o of ms) if(m.ng&&m.ng.includes(o.b)) why.push(`「${m.w}」と「${o.w}」は意味がぶつかる`);
+  kinds.add(m.kind); if(m.cs) cs.add(m.cs);
+ }
+ return {ok:!why.length,why};
+}
+const sortM=ms=>[...ms].sort((a,b)=>ORD.indexOf(a.kind)-ORD.indexOf(b.kind));
+const order=(s,ms,p)=>[s,...sortM(ms),p].filter(Boolean);
+function canMake(cards){
+ const S=cards.filter(c=>c.r==="S"),M=cards.filter(c=>c.r==="M"),P=cards.filter(c=>c.r==="P");
+ for(const s of S)for(const p of P) if(judge(s,[],p).ok) return true;
+ return false;
+}
+// 敵の文を作る（主語・述語・修飾語0〜2）
+function enemySentence(){
+ const S=C.filter(c=>c.r==="S"),M=C.filter(c=>c.r==="M"),P=C.filter(c=>c.r==="P");
+ const pick=a=>a[Math.floor(Math.random()*a.length)];
+ for(let k=0;k<999;k++){
+  const s=pick(S),p=pick(P); if(!judge(s,[],p).ok) continue;
+  let ms=[]; const n=Math.floor(Math.random()*3);
+  for(let t=0;t<20&&ms.length<n;t++){const m=pick(M); if(!ms.includes(m)&&judge(s,[...ms,m],p).ok) ms.push(m);}
+  if(ms.length+2>=3||Math.random()<.3) return {s,ms,p};
+ }
+}
+
+// ===== 敵 =====
+const ENEMIES=[
+ {name:"ことばムシ",emoji:"🐛",hp:40,atk:5,weak:"どこで",
+  intro:[["ナレーション","ことばムシが あらわれた！"],["ことばムシ","ここは どこだ…？ ばしょが わからないと ふあんだよう…"],["ナレーション","ことばムシは 〈どこで〉の ことばに よわそうだ！ 修飾語カードの 下の 📍マークを さがそう。"]],
+  hint:["ことばムシ","教室…？ どうぶつえん…？ ばしょの ことばは かんべんして…"]},
+ {name:"ヨルコウモリ",emoji:"🦇",hp:70,atk:6,weak:"いつ",
+  intro:[["ナレーション","ヨルコウモリが とびだしてきた！"],["ヨルコウモリ","キキッ！ ずっと よるだから、きのうも きょうも わからないのさ！"]],
+  hint:["ヨルコウモリ","「きのう」とか 「きょう」とか 言われると、目が まわる…！"]},
+ {name:"ダマリドラゴン",emoji:"🐉",hp:90,atk:7,big:15,weak:"なにを",
+  intro:[["ナレーション","ダマリドラゴンが 道を ふさいでいる！"],["ダマリドラゴン","ことばの 力など、わしには きかぬ！"]],
+  hint:["ダマリドラゴン","グルル… 腹がへった…… なにか よこせ…"],
+  p2:{weak:"どのように",lines:[["ダマリドラゴン","グオオ…！ もう 〈なにを〉の ことばは きかぬぞ！"],["ダマリドラゴン","だが… ゆっくり… しずかに… そう 言われると… ねむく…なる……"],["ナレーション","ドラゴンの ようすが かわった！ 弱点も かわったみたいだ。"]],
+   hint:["ダマリドラゴン","ふわぁ… 〈どんなふうに〉したか 言われると ちからが ぬける…"]}},
+];
+
+// ===== 初期デッキ（12まい） =====
+const START=["先生が","子どもが","犬が","話した","見た","歩いた","教室で","公園で","きのう","あさ","パンを","ゆっくり"];
+let own=[]; let uid=1000;
+const copy=c=>({...c,id:uid++});
+// ===== 状態 =====
+let P={hp:60,max:60}, stageNo=0, E=null, deck=[], disc=[], hand=[], slot={S:null,M:[],P:null};
+let swaps=3, swapMode=false, marks=new Set(), turn=0, totalTurns=0, weakShown=false, busy=false, intent=0, charging=false, hint0=0;
+const $=id=>document.getElementById(id);
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+
+function draw(n){ for(let i=0;i<n;i++){ if(!deck.length){deck=shuffle(disc);disc=[]} if(!deck.length) return; hand.push(deck.pop()); } }
+function refill(){ draw(HAND-hand.length); }
+function ensurePlayable(lines){
+ let k=0; while(!canMake(hand)&&k<30){ disc.push(...hand); hand=[]; refill(); k++; }
+ if(k>0) lines.push(["ナレーション","文が つくれない 手札だったので、くばりなおしたよ。"]);
+}
+
+// ===== メッセージ =====
+let mq=[],mcb=null;
+function say(lines,cb){ mq=[...lines]; mcb=cb; nextMsg(); }
+function nextMsg(){
+ if(!mq.length){ $("msg").classList.remove("on"); const f=mcb; mcb=null; if(f) f(); return; }
+ const [n,t]=mq.shift(); $("mname").textContent=n; $("mtext").textContent=t; $("msg").classList.add("on");
+}
+$("mbox").onclick=nextMsg;
+
+// ===== 戦闘 =====
+function startStage(i){
+ stageNo=i; const d=ENEMIES[i]; E={...d,max:d.hp,p2done:false}; turn=0; swaps=3; weakShown=false; hint0=0;
+ deck=shuffle([...own]); disc=[]; hand=[]; slot={S:null,M:[],P:null}; refill();
+ setIntent(); const lines=[...d.intro]; ensurePlayable(lines); render(); say(lines,render);
+}
+function setIntent(){
+ charging = !!E.big && turn%3===2;
+ intent = charging? E.big : E.atk + Math.floor(Math.random()*3);
+}
+const DMG={2:6,3:10,4:15};
+function go(){
+ if(busy||!slot.S||!slot.P) return; busy=true;
+ const used=[slot.S,...slot.M,slot.P]; const words=order(slot.S,slot.M,slot.P).map(c=>c.w).join(" ");
+ const r=judge(slot.S,slot.M,slot.P); const lines=[];
+ hand=hand.filter(c=>!used.includes(c)); disc.push(...used); slot={S:null,M:[],P:null};
+ if(r.ok){
+  const cats=[...new Set(used.filter(c=>c.r==="M").map(c=>CAT[c.kind]))];
+  const isWeak=cats.includes(E.weak);
+  const dmg=Math.round(DMG[used.length]*(isWeak?2:1));
+  E.hp=Math.max(0,E.hp-dmg);
+  lines.push(["ナレーション",`「${words}」！`]);
+  lines.push(["ナレーション",`${E.name}に ${dmg} ダメージ！`+(used.length===4?"（4語の文！）":"")]);
+  if(isWeak){ lines.push(["ナレーション",`〈${E.weak}〉の ことばが こうかばつぐん！ ×2`]); weakShown=true; }
+  hitFx();
+  if(E.p2&&!E.p2done&&E.hp>0&&E.hp<=E.max/2){ E.p2done=true; E.weak=E.p2.weak; E.hint=E.p2.hint; weakShown=false; hint0=turn; lines.push(...E.p2.lines); }
+ }else{
+  lines.push(["ナレーション",`「${words}」…… へんな文だ！`]);
+  lines.push(["ナレーション",r.why[0]+"。このターンは おわり。"]);
+ }
+ render();
+ say(lines,()=>{
+  if(E.hp<=0) return win();
+  enemyTurn();
+ });
+}
+function hitFx(){ $("eEmoji").classList.add("hit"); setTimeout(()=>$("eEmoji").classList.remove("hit"),200); }
+
+// ===== 敵のターン（ガード問題） =====
+function enemyTurn(){
+ const es=enemySentence(); const cards=order(es.s,es.ms,es.p);
+ const askS=Math.random()<.5, ans=askS?es.s:es.p; window._gans=cards.indexOf(ans);
+ $("gtitle").textContent=`${E.emoji} ${E.name}の こうげき！`+(charging?"（ためこうげき）":"");
+ $("gq").textContent=askS?"主語を えらべ！":"述語を えらべ！";
+ const gw=$("gwords"); gw.innerHTML=""; gw.style.gridTemplateColumns=`repeat(${cards.length},1fr)`;
+ let done=false;
+ cards.forEach(c=>{
+  const b=document.createElement("button"); b.innerHTML=`<div class="fit">${c.w}</div>`;
+  b.onclick=()=>{
+   if(done) return; done=true;
+   const ok=c===ans; b.classList.add(ok?"right":"wrong");
+   [...gw.children][cards.indexOf(ans)].classList.add("right");
+   setTimeout(()=>{
+    $("guard").classList.remove("on");
+    const dmg=ok?Math.ceil(intent/2):intent; P.hp=Math.max(0,P.hp-dmg);
+    const lines=[[ "ナレーション", ok?`ガード せいこう！ ${askS?"主語":"述語"}は「${ans.w}」。ダメージ ${dmg}。`:`ざんねん！ ${askS?"主語":"述語"}は「${ans.w}」だった。ダメージ ${dmg}。`]];
+    if(P.hp<=0){ render(); return say(lines,lose); }
+    turn++; totalTurns++; setIntent(); refill(); ensurePlayable(lines);
+    if(!weakShown && turn-hint0===2) lines.push(E.hint);
+    if(!weakShown && turn-hint0===4) lines.push(["ナレーション",`ヒント：${E.name}は 〈${E.weak}〉の ことばに よわいようだ！`]);
+    if(charging) lines.push(["ナレーション",`${E.name}は 力を ためている！ 次の こうげきは ${intent}！ 早く たおそう！`]);
+    render(); say(lines,()=>{busy=false;render()});
+   },window.GDELAY||900);
+  };
+  gw.appendChild(b);
+ });
+ $("guard").classList.add("on"); fitAll($("guard"));
+}
+
+function win(){
+ const lines=[["ナレーション",`${E.name}を たおした！`]];
+ if(stageNo<ENEMIES.length-1){
+  const h=Math.min(20,P.max-P.hp); P.hp+=h;
+  lines.push(["ナレーション",`ひとやすみ。HPが ${h} かいふくした。`]);
+  say(lines,()=>showReward(stageNo+1));
+ }else{
+  const rk=P.hp>=45?"S":P.hp>=35?"A":P.hp>=25?"B":P.hp>=12?"C":"D";
+  lines.push(["ナレーション",`ぜんぶ クリア！ のこりHP ${P.hp}・ターン数 ${totalTurns}`]);
+  lines.push(["ナレーション",`ランク ${rk}！ もう一度 あそぶ？`]);
+  say(lines,restart);
+ }
+}
+function lose(){ say([["ナレーション","たおれてしまった……。もう一度 ちょうせんしよう！"]],restart); }
+function restart(){ P={hp:60,max:60}; totalTurns=0; busy=false; own=START.map(w=>copy(C.find(c=>c.w===w))); startStage(0); }
+// ===== カード報酬 =====
+function cardHTML(c){
+ const sub=c.r==="M"?`${ICON[CAT[c.kind]]}${CAT[c.kind]}`:c.r==="S"?c.tag:[...new Set(c.mods.map(k=>ICON[CAT[k]]))].join("");
+ return `<div class="lb">${c.r==="S"?"主語":c.r==="P"?"述語":"修飾語"}</div><div class="fit">${c.w}</div><div class="gp fit">${sub}</div>`;
+}
+function showReward(next){
+ const have=new Set(own.map(c=>c.w)); const pool=shuffle(C.filter(c=>!have.has(c.w)));
+ const wk=ENEMIES[next].weak; const picks=[];
+ const w=pool.find(c=>c.r==="M"&&CAT[c.kind]===wk); if(w) picks.push(w);
+ for(const c of pool){ if(picks.length>=3) break; if(!picks.includes(c)) picks.push(c); }
+ shuffle(picks);
+ $("rtitle").textContent=`カードを 1まい えらぼう（いま ${own.length}まい）`;
+ const box=$("rcards"); box.innerHTML="";
+ picks.forEach(c=>{ const d=document.createElement("div"); d.className="card "+c.r; d.innerHTML=cardHTML(c);
+  d.onclick=()=>{ own.push(copy(c)); $("reward").classList.remove("on"); busy=false; startStage(next); }; box.appendChild(d); });
+ $("rskip").onclick=()=>{ $("reward").classList.remove("on"); busy=false; startStage(next); };
+ $("reward").classList.add("on"); fitAll($("reward"));
+}
+
+// ===== 描画 =====
+function gauge(el,v,m){ el.querySelector(".fill").style.width=(v/m*100)+"%"; el.querySelector(".txt").textContent=`${el.id==="pg"?"HP ":""}${v} / ${m}`; }
+function render(){
+ gauge($("pg"),P.hp,P.max);
+ $("stage").textContent=`たたかい ${stageNo+1}/3`;
+ $("swaps").textContent=`入れかえ ${swaps}`;
+ $("eEmoji").textContent=E.emoji; $("eName").textContent=E.name; gauge($("eg"),E.hp,E.max);
+ $("intent").textContent=(charging?"💥 ため：":"⚔ つぎの こうげき：")+intent;
+ const w=$("weak"); w.classList.toggle("on",weakShown); w.textContent=weakShown?`弱点：${ICON[E.weak]}${E.weak}`:"弱点：？？？";
+ // 枠
+ const sl=$("slots"); sl.innerHTML="";
+ [["S",slot.S],["M",slot.M[0]],["M",slot.M[1]],["P",slot.P]].forEach(([k,c])=>{
+  const d=document.createElement("div"); d.className="slot"+(c?" full "+k:"");
+  d.innerHTML=`<div class="lb">${k==="S"?"主語":k==="P"?"述語":"修飾語"}</div><div class="fit">${c?c.w:"　"}</div>`;
+  if(c) d.onclick=()=>{ if(busy) return; if(k==="M") slot.M=slot.M.filter(x=>x!==c); else slot[k]=null; render(); };
+  sl.appendChild(d);
+ });
+ // 手札
+ const h=$("hand"); h.innerHTML="";
+ const used=new Set([slot.S,slot.P,...slot.M].filter(Boolean));
+ hand.forEach(c=>{
+  const d=document.createElement("div");
+  d.className="card "+c.r+(used.has(c)?" used":"")+(marks.has(c)?" mark":"");
+  d.innerHTML=cardHTML(c);
+  d.onclick=()=>{
+   if(busy) return;
+   if(swapMode){ if(marks.has(c)) marks.delete(c); else if(marks.size<2) marks.add(c); return render(); }
+   if(used.has(c)) return;
+   if(c.r==="M"){ if(slot.M.length<MAXM) slot.M.push(c); else slot.M[MAXM-1]=c; } else slot[c.r]=c;
+   render();
+  };
+  h.appendChild(d);
+ });
+ for(let i=hand.length;i<HAND;i++){ const d=document.createElement("div"); d.className="card empty"; h.appendChild(d); }
+ const t=order(slot.S,slot.M,slot.P).map(c=>c.w).join(" ");
+ $("sen").textContent=swapMode?"入れかえる カードを 2まいまで えらんでね":(t||"カードを タップして 文を つくろう");
+ // ボタン
+ if(swapMode){
+  $("swapBtn").textContent="やめる"; $("swapBtn").disabled=busy;
+  $("goBtn").textContent=`入れかえる（${marks.size}まい）`; $("goBtn").disabled=busy||!marks.size;
+ }else{
+  $("swapBtn").textContent=`入れかえ`; $("swapBtn").disabled=busy||swaps<=0;
+  $("goBtn").textContent="いけ！"; $("goBtn").disabled=busy||!(slot.S&&slot.P);
+ }
+ fitAll(document.getElementById("app"));
+}
+$("swapBtn").onclick=()=>{ if(busy) return; swapMode=!swapMode; marks.clear(); slot={S:null,M:[],P:null}; render(); };
+$("goBtn").onclick=()=>{
+ if(swapMode){
+  hand=hand.filter(c=>!marks.has(c)); disc.push(...marks); marks.clear(); swaps--; swapMode=false; refill();
+  const lines=[]; ensurePlayable(lines); render(); if(lines.length) say(lines,render); return;
+ }
+ go();
+};
+
+// ===== はみだし防止 =====
+function fit(el){
+ if(!el.dataset.fs) el.dataset.fs=parseFloat(getComputedStyle(el).fontSize);
+ let f=+el.dataset.fs; el.style.fontSize=f+"px";
+ while(el.scrollWidth>el.clientWidth&&f>8){f-=1;el.style.fontSize=f+"px"}
+}
+const fitAll=root=>root.querySelectorAll(".fit").forEach(fit);
+window.addEventListener("resize",()=>render());
+
+restart();
+</script>
+</body>
+</html>

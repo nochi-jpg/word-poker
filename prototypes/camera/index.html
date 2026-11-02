@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ことばポーカー カメラ試作</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#0b0b0f;color:#eee;font-family:"BIZ UDPGothic","Hiragino Maru Gothic ProN","Meiryo",sans-serif;user-select:none}
+#app{height:100dvh;display:grid;grid-template-rows:1fr 220px}
+#view{position:relative;min-height:0}
+#view canvas{display:block;width:100%;height:100%}
+#cap{position:absolute;left:12px;top:12px;height:28px;line-height:28px;padding:0 10px;border-radius:6px;background:rgba(0,0,0,.55);font-size:13px}
+#panel{background:#15151c;border-top:2px solid #3a3020;padding:10px;display:grid;grid-template-rows:44px 1fr 48px;gap:8px;transition:opacity .3s}
+#panel.hide{opacity:.15;pointer-events:none}
+#panel>*{min-width:0}
+.sen{background:#0b0b0f;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 10px}
+.fit{white-space:nowrap;overflow:hidden;width:100%;text-align:center}
+.sen .fit{font-size:20px;font-weight:bold}
+.hand{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;min-height:0}
+.hand>*{min-width:0}
+.card{border-radius:8px;background:#efe6d2;color:#222;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:3px solid transparent;transition:transform .12s}
+.card .lb{font-size:11px;height:14px;line-height:14px;color:#6b5a3a}
+.card .fit{font-size:17px;font-weight:bold;height:24px;line-height:24px}
+.card.on{border-color:#c9a24a;transform:translateY(-4px)}
+.card:hover{transform:translateY(-3px) rotate(-1deg)}
+.go{border:none;border-radius:10px;background:#c9a24a;color:#1a1408;font-size:18px;font-weight:bold;cursor:pointer}
+.go:disabled{background:#444;color:#888}
+#msg{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(860px,calc(100% - 16px));height:140px;background:rgba(10,10,14,.94);border:2px solid #c9a24a;border-radius:12px;padding:10px 14px;display:none;grid-template-rows:22px 1fr 40px;gap:4px;cursor:pointer}
+#msg.on{display:grid}
+#msg:hover{border-color:#fff}
+.mn{font-size:13px;color:#c9a24a;font-weight:bold}
+.mt{font-size:17px;line-height:1.5;overflow:hidden;white-space:pre-line}
+.mb{justify-self:end;width:120px;height:40px;border:none;border-radius:8px;background:#c9a24a;color:#1a1408;font-size:15px;font-weight:bold;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="app">
+ <div id="view"><div id="cap">アングル1：正面</div></div>
+ <div id="panel">
+  <div class="sen"><div class="fit" id="sen">カードを えらんで 文を つくろう（最大4まい）</div></div>
+  <div class="hand" id="hand"></div>
+  <button class="go" id="go" disabled>決定</button>
+ </div>
+</div>
+<div id="msg"><div class="mn" id="mn"></div><div class="mt" id="mt"></div><button class="mb">つぎへ</button></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ===== ことばデータ（試作用の小さなセット） =====
+const C=[
+ {r:"S",w:"先生が",b:"先生",tag:"ひと"},{r:"S",w:"犬が",b:"犬",tag:"どうぶつ"},{r:"S",w:"子どもが",b:"子ども",tag:"ひと"},
+ {r:"P",w:"食べた",subj:["ひと","どうぶつ"],mods:["たべもの","ようす","とき","ばしょ"]},
+ {r:"P",w:"話した",subj:["ひと"],mods:["あいて","ようす","とき","ばしょ"]},
+ {r:"P",w:"走った",subj:["ひと","どうぶつ"],mods:["ようす","とき","ばしょ"]},
+ {r:"M",w:"パンを",b:"パン",kind:"たべもの"},{r:"M",w:"公園で",b:"公園",kind:"ばしょ"},
+ {r:"M",w:"きのう",b:"きのう",kind:"とき"},{r:"M",w:"ゆっくり",b:"ゆっくり",kind:"ようす"},
+ {r:"M",w:"友だちに",b:"友だち",kind:"あいて"},
+];
+const ORD=["とき","ばしょ","あいて","たべもの","ようす"];
+function judge(cards){
+ const S=cards.filter(c=>c.r==="S"),P=cards.filter(c=>c.r==="P"),M=cards.filter(c=>c.r==="M");
+ if(S.length!==1||P.length!==1) return {ok:false,why:"主語と述語が 1まいずつ ひつようです"};
+ const s=S[0],p=P[0];
+ if(!p.subj.includes(s.tag)) return {ok:false,why:`「${s.w}」は「${p.w}」の主語に なれない`};
+ const k=new Set();
+ for(const m of M){ if(!p.mods.includes(m.kind)) return {ok:false,why:`「${m.w}」は「${p.w}」を くわしく できない`};
+  if(k.has(m.kind)) return {ok:false,why:"同じ しゅるいの 修飾語が 2つ ある"}; k.add(m.kind); }
+ return {ok:true};
+}
+const order=cs=>[...cs.filter(c=>c.r==="S"),...cs.filter(c=>c.r==="M").sort((a,b)=>ORD.indexOf(a.kind)-ORD.indexOf(b.kind)),...cs.filter(c=>c.r==="P")];
+const DEALER=[ // ディーラーの文（試作用）
+ {ws:["犬が","走った"],ok:true},{ws:["先生が","きのう","食べた"],ok:true},
+ {ws:["犬が","友だちに","話した"],ok:false},{ws:["子どもが","公園で","走った"],ok:true},
+];
+
+// ===== 3D =====
+const view=document.getElementById("view");
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+view.prepend(renderer.domElement);
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x0b0b0f); scene.fog=new THREE.Fog(0x0b0b0f,6,12);
+const cam=new THREE.PerspectiveCamera(50,1,.1,50);
+scene.add(new THREE.AmbientLight(0xffffff,.25));
+const lamp=new THREE.PointLight(0xffd59a,1.6,8); lamp.position.set(0,2.6,-.3); scene.add(lamp);
+// ランプのかさ
+const shade=new THREE.Mesh(new THREE.ConeGeometry(.35,.25,24,1,true),new THREE.MeshStandardMaterial({color:0x2a2418,side:THREE.DoubleSide}));
+shade.position.set(0,2.75,-.3); scene.add(shade);
+const bulb=new THREE.Mesh(new THREE.SphereGeometry(.07,16,12),new THREE.MeshBasicMaterial({color:0xffe8b0})); bulb.position.set(0,2.62,-.3); scene.add(bulb);
+// 床・壁
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(20,20),new THREE.MeshStandardMaterial({color:0x17131a})); floor.rotation.x=-Math.PI/2; scene.add(floor);
+const wall=new THREE.Mesh(new THREE.PlaneGeometry(20,8),new THREE.MeshStandardMaterial({color:0x1d1820})); wall.position.set(0,4,-4); scene.add(wall);
+// テーブル
+const table=new THREE.Group(); scene.add(table);
+const felt=new THREE.Mesh(new THREE.BoxGeometry(3.2,.08,2),new THREE.MeshStandardMaterial({color:0x1f5a3a,roughness:.9}));
+felt.position.y=.78; table.add(felt);
+const rim=new THREE.Mesh(new THREE.BoxGeometry(3.4,.1,2.2),new THREE.MeshStandardMaterial({color:0x4a2e1a,roughness:.6})); rim.position.y=.74; table.add(rim);
+for(const [x,z] of [[-1.5,-.9],[1.5,-.9],[-1.5,.9],[1.5,.9]]){ const leg=new THREE.Mesh(new THREE.BoxGeometry(.12,.74,.12),new THREE.MeshStandardMaterial({color:0x3a2414})); leg.position.set(x,.37,z); table.add(leg); }
+
+// ディーラー（仮の立ち絵：板に描いたシルエット）
+function dealerTex(mood){
+ const cv=document.createElement("canvas"); cv.width=512; cv.height=768; const g=cv.getContext("2d");
+ const col={基本:"#5b5f78",思考:"#4f6a78",カードを出す:"#6a5b78",嬉しい:"#7a6a3a",悔しい:"#7a3a3a"}[mood];
+ g.fillStyle=col;
+ g.beginPath(); g.arc(256,170,95,0,Math.PI*2); g.fill(); // 頭
+ g.beginPath(); g.moveTo(90,768); g.quadraticCurveTo(100,300,256,290); g.quadraticCurveTo(412,300,422,768); g.fill(); // 体
+ g.fillStyle="rgba(255,255,255,.9)"; g.font="bold 40px sans-serif"; g.textAlign="center";
+ g.fillText("立ち絵（仮）",256,470); g.font="bold 54px sans-serif"; g.fillText(mood,256,550);
+ const t=new THREE.CanvasTexture(cv); return t;
+}
+const moods={}; ["基本","思考","カードを出す","嬉しい","悔しい"].forEach(m=>moods[m]=dealerTex(m));
+const dealer=new THREE.Mesh(new THREE.PlaneGeometry(1.4,2.1),new THREE.MeshBasicMaterial({map:moods["基本"],transparent:true}));
+dealer.position.set(0,1.55,-1.6); scene.add(dealer);
+const setMood=m=>{dealer.material.map=moods[m];dealer.material.needsUpdate=true};
+
+// カード（3D）
+const mctx=document.createElement("canvas").getContext("2d");
+function wordFs(word){let f=64;do{mctx.font=`bold ${f}px sans-serif`;f-=2}while(mctx.measureText(word).width>220&&f>20);return f+2;}
+let tableFs=64;
+function cardTex(word,role){
+ const cv=document.createElement("canvas"); cv.width=256; cv.height=360; const g=cv.getContext("2d");
+ g.fillStyle="#efe6d2"; g.fillRect(0,0,256,360); g.strokeStyle="#c9a24a"; g.lineWidth=10; g.strokeRect(8,8,240,344);
+ g.fillStyle="#6b5a3a"; g.font="bold 28px sans-serif"; g.textAlign="center"; g.fillText(role,128,70);
+ g.fillStyle="#222"; g.font=`bold ${tableFs}px sans-serif`;
+ g.fillText(word,128,200); return new THREE.CanvasTexture(cv);
+}
+const backTex=(()=>{const cv=document.createElement("canvas");cv.width=256;cv.height=360;const g=cv.getContext("2d");
+ g.fillStyle="#3a1a22";g.fillRect(0,0,256,360);g.strokeStyle="#c9a24a";g.lineWidth=10;g.strokeRect(8,8,240,344);
+ g.strokeStyle="rgba(201,162,74,.5)";g.lineWidth=3;for(let i=-360;i<360;i+=28){g.beginPath();g.moveTo(i,0);g.lineTo(i+360,360);g.stroke()}
+ return new THREE.CanvasTexture(cv)})();
+const ROLE={S:"主語",M:"修飾語",P:"述語"};
+const tableCards=[];
+function makeCard(word,role,x,z,yaw){
+ const geo=new THREE.BoxGeometry(.36,.006,.5);
+ const side=new THREE.MeshStandardMaterial({color:0xddd2bb});
+ const front=new THREE.MeshStandardMaterial({map:cardTex(word,role)}), back=new THREE.MeshStandardMaterial({map:backTex});
+ const m=new THREE.Mesh(geo,[side,side,back,front,side,side]); // +y=裏, -y=表
+ m.position.set(x,.83,z); m.rotation.y=yaw+Math.PI; scene.add(m); tableCards.push(m); return m;
+}
+function clearTable(){ tableCards.splice(0).forEach(m=>scene.remove(m)); }
+
+// ===== カメラ =====
+const A1={pos:new THREE.Vector3(0,1.35,2.5),look:new THREE.Vector3(0,1.2,-1.2)};
+const A2={pos:new THREE.Vector3(0,3.1,.35),look:new THREE.Vector3(0,.8,-.05)};
+const camState={pos:A1.pos.clone(),look:A1.look.clone()};
+function applyCam(){cam.position.copy(camState.pos);cam.lookAt(camState.look)}
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const anims=[];
+function tween(ms,fn){return new Promise(res=>anims.push({t0:performance.now(),ms,fn,res}))}
+async function moveCam(from,to,ms,side){
+ const ctrl=new THREE.Vector3((from.pos.x+to.pos.x)/2+side,Math.max(from.pos.y,to.pos.y)+.4,(from.pos.z+to.pos.z)/2+.6);
+ await tween(ms,t=>{const e=ease(t),a=new THREE.Vector3().copy(from.pos).multiplyScalar((1-e)*(1-e));
+  a.addScaledVector(ctrl,2*(1-e)*e).addScaledVector(to.pos,e*e); camState.pos.copy(a); camState.look.lerpVectors(from.look,to.look,e);});
+}
+const cap=t=>document.getElementById("cap").textContent=t;
+
+// ===== 進行 =====
+let hand=[],pick=[],round=0,busy=false;
+const $=id=>document.getElementById(id);
+function fit(el){let f=parseFloat(el.dataset.fs||getComputedStyle(el).fontSize);el.dataset.fs=f;el.style.fontSize=f+"px";while(el.scrollWidth>el.clientWidth&&f>9){f--;el.style.fontSize=f+"px"}}
+function deal(){
+ const pool=[...C].sort(()=>Math.random()-.5);
+ hand=[pool.find(c=>c.r==="S"),pool.find(c=>c.r==="P"),...pool.filter(c=>c.r==="M").slice(0,2)];
+ hand.push(...pool.filter(c=>!hand.includes(c)).slice(0,2)); hand.sort(()=>Math.random()-.5); pick=[]; render();
+}
+function render(){
+ const h=$("hand"); h.innerHTML="";
+ hand.forEach(c=>{const d=document.createElement("div");d.className="card"+(pick.includes(c)?" on":"");
+  d.innerHTML=`<div class="lb">${ROLE[c.r]}</div><div class="fit">${c.w}</div>`;
+  d.onclick=()=>{if(busy)return; if(pick.includes(c)) pick=pick.filter(x=>x!==c); else if(pick.length<4) pick.push(c); render();};
+  h.appendChild(d);});
+ $("sen").textContent=pick.length?order(pick).map(c=>c.w).join(" "):"カードを えらんで 文を つくろう（最大4まい）";
+ $("go").disabled=busy||pick.length<2;
+ document.querySelectorAll("#panel .fit").forEach(fit);
+ // 手札の文字サイズは、いちばん小さいものに全部そろえる
+ const fs=[...document.querySelectorAll("#hand .fit")]; const mn=Math.min(...fs.map(e=>parseFloat(e.style.fontSize)));
+ fs.forEach(e=>e.style.fontSize=mn+"px");
+}
+let msgRes=null;
+function say(name,text){return new Promise(r=>{$("mn").textContent=name;const t=$("mt");t.textContent=text;$("msg").classList.add("on");
+ let f=17;t.style.fontSize=f+"px";while(t.scrollHeight>t.clientHeight+1&&f>11){f--;t.style.fontSize=f+"px"} msgRes=r;})}
+$("msg").onclick=()=>{$("msg").classList.remove("on");const r=msgRes;msgRes=null;if(r)r();};
+
+$("go").onclick=async()=>{
+ if(busy) return; busy=true; $("panel").classList.add("hide");
+ const mine=order(pick), dl=DEALER[round%DEALER.length]; round++;
+ setMood("カードを出す");
+ // 伏せたカードをテーブルに置く（奥＝ディーラー、手前＝プレイヤー）
+ clearTable();
+ tableFs=Math.min(...[...dl.ws,...mine.map(c=>c.w)].map(wordFs));
+ const dCards=dl.ws.map((w,i)=>makeCard(w,"",(i-(dl.ws.length-1)/2)*.42,-.45,0));
+ const pCards=mine.map((c,i)=>makeCard(c.w,ROLE[c.r],(i-(mine.length-1)/2)*.42,.4,0));
+ [...dCards,...pCards].forEach(m=>m.rotation.z=0); // 裏向き（+y が裏）
+ dCards.forEach(m=>m.rotation.x=0);
+ await tween(400,()=>{});
+ cap("アングル2：俯瞰（テーブル）");
+ await moveCam(A1,A2,1100,1.6);
+ // 同時にめくる
+ await tween(600,t=>{const e=ease(t);[...dCards,...pCards].forEach(m=>{m.rotation.z=Math.PI*e;m.position.y=.83+Math.sin(Math.PI*e)*.18;});});
+ const r=judge(mine), my=mine.length*(r.ok?2:1), dp=dl.ws.length*(dl.ok?2:1);
+ await say("判定",`あなた：「${mine.map(c=>c.w).join(" ")}」\n${r.ok?"成立！":"へんな文…"} ${mine.length}語×${r.ok?2:1}＝${my}点`);
+ if(!r.ok) await say("判定",`理由：${r.why}`);
+ await say("判定",`ディーラー：「${dl.ws.join(" ")}」\n${dl.ok?"成立！":"へんな文…"} ${dl.ws.length}語×${dl.ok?2:1}＝${dp}点`);
+ cap("アングル1：正面");
+ await moveCam(A2,A1,1100,-1.6);
+ let res;
+ if(my>dp) res="あなたの勝ち！"; else if(my<dp) res="ディーラーの勝ち…";
+ else if(r.ok&&!dl.ok) res="同点なので、文が正しいあなたの勝ち！"; else if(!r.ok&&dl.ok) res="同点だけど、文が正しいディーラーの勝ち。"; else res="引き分け。もう一度！";
+ setMood(res.includes("あなたの勝ち")?"悔しい":res.includes("ディーラーの勝ち")?"嬉しい":"思考");
+ await say("ディーラー",res);
+ setMood("基本"); clearTable(); busy=false; $("panel").classList.remove("hide"); deal();
+};
+
+// ===== ループ =====
+function resize(){const w=view.clientWidth,h=view.clientHeight;renderer.setSize(w,h,false);cam.aspect=w/h;
+ cam.fov=w/h<1?68:50; cam.updateProjectionMatrix();}
+window.addEventListener("resize",()=>{resize();render()});
+let tt=0;
+function loop(now){
+ requestAnimationFrame(loop);
+ for(let i=anims.length-1;i>=0;i--){const a=anims[i],t=Math.min(1,(now-a.t0)/a.ms);a.fn(t);if(t>=1){anims.splice(i,1);a.res();}}
+ tt+=.016; dealer.position.y=1.55+Math.sin(tt*1.6)*.012; // 呼吸
+ applyCam(); renderer.render(scene,cam);
+}
+resize(); deal(); requestAnimationFrame(loop);
+</script>
+</body>
+</html>

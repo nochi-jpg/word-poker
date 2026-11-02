@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>ことばポーカー 判定</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&amp;family=Zen+Maru+Gothic:wght@500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.dots{background-image:radial-gradient(rgba(0,0,0,.22) 22%,transparent 23%);background-size:14px 14px}
+.burst{clip-path:polygon(50% 0,58% 18%,78% 6%,74% 28%,98% 26%,82% 44%,100% 58%,78% 64%,88% 86%,64% 76%,56% 100%,44% 80%,24% 96%,26% 72%,0 74%,16% 54%,2% 34%,24% 30%,18% 8%,40% 20%)}
+</style>
+</helmet>
+<div style="width: 1366px; height: 768px; position: relative; overflow: hidden; background: #8e0c14; font-family: 'Zen Maru Gothic', sans-serif; color: #111">
+  <div class="dots" style="position: absolute; inset: 0"></div>
+
+  <!-- テーブルのふち -->
+  <div style="position: absolute; left: 60px; top: 40px; width: 1246px; height: 688px; border: 6px solid #111; box-shadow: inset 0 0 0 6px #d7141f"></div>
+
+  <!-- ディーラーの文（奥） -->
+  <div style="position: absolute; left: 110px; top: 70px; display: flex; flex-direction: column; gap: 10px">
+    <div style="background: #111; color: #fff; padding: 4px 20px; transform: skewX(-14deg); font-weight: 900; font-size: 16px; align-self: flex-start">ディーラー</div>
+    <div style="display: flex; gap: 12px; align-items: flex-end">
+      <sc-for list="{{dealer}}" as="c" hint-placeholder-count="4">
+        <div style="width: 118px; height: 150px; background: #fff; border: 3px solid #111; box-shadow: 5px 5px 0 #111; display: flex; flex-direction: column; transform: rotate({{c.tilt}}deg)">
+          <span style="height: 26px; background: {{c.band}}; color: {{c.ink}}; font-weight: 900; font-size: 13px; display: flex; align-items: center; justify-content: center">{{c.role}}</span>
+          <span style="flex: 1; display: flex; align-items: center; justify-content: center; font-family: 'Dela Gothic One', sans-serif; font-size: 22px">{{c.word}}</span>
+        </div>
+      </sc-for>
+      <div style="margin-left: 18px; display: flex; flex-direction: column; gap: 4px">
+        <span style="color: #fff; font-weight: 900; font-size: 18px">成立　4語 × 2</span>
+        <span style="color: #fff; font-family: 'Dela Gothic One', sans-serif; font-size: 54px; line-height: 1">8点</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- あなたの文（手前） -->
+  <div style="position: absolute; left: 110px; top: 420px; display: flex; flex-direction: column; gap: 10px">
+    <div style="background: #fff; color: #111; padding: 4px 20px; transform: skewX(-14deg); font-weight: 900; font-size: 16px; align-self: flex-start; box-shadow: 4px 4px 0 #111">あなた</div>
+    <div style="display: flex; gap: 12px; align-items: flex-end">
+      <sc-for list="{{mine}}" as="c" hint-placeholder-count="4">
+        <div style="display: flex; flex-direction: column; gap: 6px; align-items: stretch; transform: rotate({{c.tilt}}deg)">
+          <div style="height: 30px; background: {{c.adjBg}}; border: {{c.adjBorder}}; font-weight: 900; font-size: 15px; display: flex; align-items: center; justify-content: center">{{c.adj}}</div>
+          <div style="width: 118px; height: 150px; background: #fff; border: 3px solid #111; box-shadow: 5px 5px 0 #111; display: flex; flex-direction: column">
+            <span style="height: 26px; background: {{c.band}}; color: {{c.ink}}; font-weight: 900; font-size: 13px; display: flex; align-items: center; justify-content: center">{{c.role}}</span>
+            <span style="flex: 1; display: flex; align-items: center; justify-content: center; font-family: 'Dela Gothic One', sans-serif; font-size: 22px">{{c.word}}</span>
+          </div>
+        </div>
+      </sc-for>
+      <div style="margin-left: 18px; display: flex; flex-direction: column; gap: 4px">
+        <span style="color: #fff; font-weight: 900; font-size: 18px">成立　5語 × 2</span>
+        <span style="color: #fff; font-family: 'Dela Gothic One', sans-serif; font-size: 54px; line-height: 1">10点</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 成立スタンプ -->
+  <div style="position: absolute; left: 930px; top: 250px; width: 330px; height: 330px; transform: rotate(-10deg)">
+    <div class="burst" style="position: absolute; inset: 0; background: #111; transform: translate(10px, 10px)"></div>
+    <div class="burst" style="position: absolute; inset: 0; background: #fff; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 4px">
+      <span style="font-family: 'Dela Gothic One', sans-serif; font-size: 72px; color: {{red}}; line-height: 1">成立！</span>
+      <span style="font-weight: 900; font-size: 20px">あなたの勝ち</span>
+    </div>
+  </div>
+
+  <!-- 文字ウインドウ（理由の表示） -->
+  <div style="position: absolute; left: 110px; top: 664px; width: 1146px; height: 52px; background: #111; transform: skewX(-12deg); box-shadow: 6px 6px 0 #d7141f; display: flex; align-items: center; padding: 0 30px; box-sizing: border-box; gap: 18px">
+    <span style="background: {{red}}; color: #fff; font-weight: 900; font-size: 15px; padding: 2px 12px">判定</span>
+    <span style="color: #fff; font-weight: 900; font-size: 20px">「やさしい」が「犬」をくわしくしている。5語の文で、ディーラーより2点多い！</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"red":{"editor":"color","default":"#d7141f","options":["#d7141f","#c8102e","#e8380d"]},"$preview":{"width":1366,"height":768}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const C = { S: ['#d7141f', '#fff'], M: ['#f2b705', '#111'], P: ['#1e4fd8', '#fff'] };
+    const card = (r, role, word, tilt, adj) => ({ role, word, tilt, band: C[r][0], ink: C[r][1],
+      adj: adj || '', adjBg: adj ? '#3dd27a' : 'transparent', adjBorder: adj ? '3px solid #111' : '3px solid transparent' });
+    return {
+      red: this.props.red ?? '#d7141f',
+      dealer: [card('S', '主語', '先生が', -2), card('M', '修飾語', 'きのう', 1), card('M', '修飾語', '本を', -1), card('P', '述語', '読んだ', 2)],
+      mine: [card('S', '主語', '犬が', 2, 'やさしい'), card('M', '修飾語', '公園で', -1), card('M', '修飾語', 'ケーキを', 1), card('P', '述語', '食べた', -2)],
+    };
+  }
+}
+</script>
+</body>
+</html>

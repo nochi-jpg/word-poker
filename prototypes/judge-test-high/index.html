@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ことばポーカー 高学年 判定テスト</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:"BIZ UDPGothic","Hiragino Maru Gothic ProN","Meiryo",sans-serif;background:#1e2333;color:#f2f2f2;display:flex;justify-content:center;user-select:none}
+#app{width:100%;max-width:900px;height:100dvh;display:grid;grid-template-rows:44px 1fr;padding:8px;gap:8px}
+#app>*,.slot>*,.adj>*,.word>*,.card>*,.tabs>*,.page>*,.bar>*,.line>*,.hand>*,.foot>*,.pager>*,.rows>*,.r>*,.box>*,.row>*{min-width:0}
+.fit{white-space:nowrap;overflow:hidden}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tab{height:44px;border:none;border-radius:10px;background:#2e3550;color:#ccd;font-size:15px;font-weight:bold;cursor:pointer}
+.tab.on{background:#f5c542;color:#222}
+.page{display:none;min-height:0}.page.on{display:grid}
+#play{grid-template-rows:40px 1fr 96px 52px auto 52px;gap:8px}
+.bar{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.chip{height:40px;border-radius:10px;background:#2e3550;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold;padding:0 6px}
+.sentence{display:flex;align-items:center;justify-content:center;background:#141826;border-radius:12px;padding:8px;min-height:0;text-align:center}
+.sentence .fit{font-size:24px;font-weight:bold;width:100%}
+.line{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.slot{height:96px;border-radius:10px;border:2px dashed #556;display:grid;grid-template-rows:30px 1fr;gap:4px;padding:4px;overflow:hidden}
+.slot.empty{align-items:center;justify-items:center;color:#667;font-size:12px;grid-template-rows:1fr}
+.adj{height:30px;border-radius:7px;background:#c8f0b8;color:#222;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:bold;cursor:pointer;padding:0 4px}
+.adj.none{background:transparent;border:1px dashed #556;color:#667;cursor:default;font-weight:normal;font-size:11px}
+.adj.target{background:transparent;border:2px solid #c8f0b8;color:#c8f0b8;cursor:pointer}
+.word{border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#222;cursor:pointer;padding:0 4px}
+.word .lb{font-size:10px;height:13px;line-height:13px;opacity:.7;width:100%;text-align:center}
+.word .fit{font-size:16px;font-weight:bold;width:100%;text-align:center;height:22px;line-height:22px}
+.judge{height:52px;border:none;border-radius:12px;background:#f5c542;color:#222;font-size:19px;font-weight:bold;cursor:pointer}
+.judge:disabled{background:#555;color:#999}
+.hand{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.card{height:68px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:#222;padding:2px 4px;overflow:hidden;border:3px solid transparent}
+.card .lb{font-size:10px;height:13px;line-height:13px;opacity:.75;width:100%;text-align:center;white-space:nowrap;overflow:hidden}
+.card .fit{font-size:16px;font-weight:bold;width:100%;text-align:center;height:22px;line-height:22px}
+.card .gp{font-size:10px;height:13px;line-height:13px;opacity:.65;width:100%;text-align:center}
+.card.used{opacity:.22;cursor:default}
+.card.pick{border-color:#fff;transform:translateY(-3px)}
+.S{background:#ff8a80}.M{background:#ffe082}.P{background:#82b1ff}.N{background:#c8f0b8}
+.foot{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.btn{height:52px;border:none;border-radius:10px;background:#3b4466;color:#fff;font-size:14px;font-weight:bold;cursor:pointer}
+@media (max-width:620px){.hand{grid-template-columns:repeat(4,1fr)}.slot{height:96px}}
+@media (max-height:520px){
+ #app{grid-template-rows:34px 1fr;gap:6px;padding:6px}
+ .tab{height:34px;font-size:13px}
+ #play{grid-template-rows:30px 1fr 70px 40px auto 38px;gap:6px}
+ .chip{height:30px;font-size:12px}
+ .slot{height:70px;grid-template-rows:22px 1fr;gap:3px;padding:3px}
+ .adj{height:22px;font-size:12px}
+ .word .lb{height:11px;line-height:11px;font-size:9px}.word .fit{height:20px;line-height:20px;font-size:15px}
+ .judge{height:40px;font-size:16px}
+ .card{height:50px;padding:1px 3px}.card .lb{height:11px;line-height:11px;font-size:9px}.card .fit{height:20px;line-height:20px;font-size:15px}.card .gp{height:11px;line-height:11px;font-size:9px}
+ .btn{height:38px;font-size:13px}
+ .sentence .fit{font-size:18px}
+ #list,#rep{grid-template-rows:30px 1fr 38px;gap:6px}.pager .btn{height:38px}#lmode{height:30px!important}
+ .r .fit{font-size:13px}.r button{height:24px}
+ .box{padding:10px;gap:6px}.box .big{font-size:22px;height:32px;line-height:32px}.box .why{height:40px}
+}
+/* 結果 */
+#res{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:16px}
+#res.on{display:flex}
+.box{width:100%;max-width:460px;background:#262c42;border-radius:16px;padding:16px;display:grid;gap:10px}
+.box .big{font-size:28px;font-weight:bold;text-align:center;height:42px;line-height:42px}
+.box .fit{font-size:18px;text-align:center;height:28px;line-height:28px}
+.box .why{font-size:14px;color:#ccd;height:60px;text-align:center;overflow:hidden}
+.box .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ok{color:#7ee787}.ng{color:#ff7b72}
+/* リスト */
+#list,#rep{grid-template-rows:40px 1fr 48px;gap:8px}
+.rows{display:grid;grid-template-rows:repeat(8,1fr);gap:4px;min-height:0}
+.r{display:grid;grid-template-columns:1fr 72px;gap:6px;align-items:center;background:#262c42;border-radius:8px;padding:0 8px;min-height:0;overflow:hidden}
+.r .fit{font-size:15px}
+.r .sub{font-size:11px;color:#ffb3ad;height:14px;line-height:14px}
+.r button{height:32px;border:none;border-radius:8px;background:#3b4466;color:#fff;font-size:12px;font-weight:bold;cursor:pointer}
+.r.flag{background:#5a2b33}.r.flag button{background:#ff7b72;color:#222}
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pager .btn{height:48px}
+</style>
+</head>
+<body>
+<div id="app">
+ <div class="tabs">
+  <button class="tab on" data-p="play">あそぶ</button>
+  <button class="tab" data-p="list">ランダム検査</button>
+  <button class="tab" data-p="rep">報告</button>
+ </div>
+ <section class="page on" id="play">
+  <div class="bar"><div class="chip fit" id="info1"></div><div class="chip fit" id="info2"></div></div>
+  <div class="sentence"><div class="fit" id="sen"></div></div>
+  <div class="line" id="line"></div>
+  <button class="judge" id="judge" disabled>いけ！（判定）</button>
+  <div class="hand" id="hand"></div>
+  <div class="foot"><button class="btn" id="clear">ならべ直す</button><button class="btn" id="deal">最初から配る</button><button class="btn" id="mode">いま：デッキ24枚</button></div>
+ </section>
+ <section class="page" id="list">
+  <div class="bar"><button class="btn" id="lmode" style="height:40px"></button><div class="chip fit" id="lcount"></div></div>
+  <div class="rows" id="rows"></div>
+  <div class="pager"><button class="btn" id="lnew">別の8文を見る</button><button class="btn" id="lsw">6語以上だけ／すべて</button></div>
+ </section>
+ <section class="page" id="rep">
+  <div class="chip fit" id="repInfo"></div>
+  <div class="rows" id="repRows"></div>
+  <div class="pager"><button class="btn" id="rnext">次のページ</button><button class="btn" id="copy">コピーしてClaudeにわたす</button></div>
+ </section>
+</div>
+<div id="res"><div class="box">
+ <div class="big" id="rBig"></div><div class="fit" id="rSen"></div><div class="why" id="rWhy"></div>
+ <div class="row"><button class="btn" id="agree">判定に なっとく</button><button class="btn" id="disagree">判定が おかしい</button></div>
+</div></div>
+
+<script>
+// ================= カードデータ（高学年） =================
+// S 主語: tag=主語の種類 / nt=名詞の種類（名詞をくわしくする語用） / adj:false=くわしくできない
+// M 修飾語（述語をくわしくする）: kind=種類 / cs=助詞 / nt=名詞の種類（名詞を含む場合） / ngP=合わない述語 / ng=いっしょに使えない語
+// N 名詞をくわしくする語: to=くわしくできる名詞の種類 / ngP=合わない述語
+// P 述語: subj=主語の種類 / mods=受け入れる修飾語の種類
+const C=[
+ // ---- 主語（中学年と共通） ----
+ {r:"S",w:"先生が",b:"先生",tag:"ひと",nt:"ひと"},{r:"S",w:"子どもが",b:"子ども",tag:"ひと",nt:"ひと"},
+ {r:"S",w:"友だちが",b:"友だち",tag:"ひと",nt:"ひと"},{r:"S",w:"私は",b:"私",tag:"ひと",nt:"ひと",adj:false},
+ {r:"S",w:"犬が",b:"犬",tag:"どうぶつ",nt:"どうぶつ"},{r:"S",w:"ねこが",b:"ねこ",tag:"どうぶつ",nt:"どうぶつ"},
+ {r:"S",w:"ぞうが",b:"ぞう",tag:"どうぶつ",nt:"どうぶつ"},{r:"S",w:"本が",b:"本",tag:"もの",nt:"もの"},
+ {r:"S",w:"算数が",b:"算数",tag:"こと",nt:"こと"},{r:"S",w:"漢字が",b:"漢字",tag:"こと",nt:"こと"},
+ // ---- 述語（中学年と共通） ----
+ {r:"P",w:"食べた",subj:["ひと","どうぶつ"],mods:["たべもの","ようす","とき","ばしょ"]},
+ {r:"P",w:"走った",subj:["ひと","どうぶつ"],mods:["ようす","とき","ばしょ"]},
+ {r:"P",w:"ねむった",subj:["ひと","どうぶつ"],mods:["とき","ばしょ"]},
+ {r:"P",w:"鳴いた",subj:["どうぶつ"],mods:["こえ","とき","ばしょ"]},
+ {r:"P",w:"歩いた",subj:["ひと","どうぶつ"],mods:["ようす","とき","ばしょ"]},
+ {r:"P",w:"遊んだ",subj:["ひと","どうぶつ"],mods:["ようす","とき","ばしょ"]},
+ {r:"P",w:"歌った",subj:["ひと"],mods:["こえ","ようす","とき","ばしょ"]},
+ {r:"P",w:"話した",subj:["ひと"],mods:["あいて","こえ","ようす","とき","ばしょ"]},
+ {r:"P",w:"見た",subj:["ひと","どうぶつ"],mods:["たべもの","もの","ようす","とき","ばしょ"]},
+ {r:"P",w:"読んだ",subj:["ひと"],mods:["もの","こえ","ようす","とき","ばしょ"]},
+ {r:"P",w:"書いた",subj:["ひと"],mods:["もの","ようす","とき","ばしょ","あいて"]},
+ {r:"P",w:"作った",subj:["ひと"],mods:["たべもの","もの","ようす","とき","ばしょ","あいて"]},
+ {r:"P",w:"大きい",subj:["ひと","どうぶつ","もの"],mods:["ていど"]},
+ {r:"P",w:"むずかしい",subj:["こと","もの"],mods:["ていど"]},
+ {r:"P",w:"おもしろい",subj:["こと","もの","ひと","どうぶつ"],mods:["ていど"]},
+ // ---- 修飾語（高学年用） ----
+ {r:"M",w:"おととい",b:"おととい",kind:"とき"},{r:"M",w:"放課後",b:"放課後",kind:"とき"},{r:"M",w:"日曜日に",b:"日曜日",kind:"とき",cs:"に"},
+ {r:"M",w:"図書館で",b:"図書館",kind:"ばしょ",cs:"で",nt:"ばしょ"},{r:"M",w:"体育館で",b:"体育館",kind:"ばしょ",cs:"で",nt:"ばしょ"},{r:"M",w:"公園で",b:"公園",kind:"ばしょ",cs:"で",nt:"ばしょ"},
+ {r:"M",w:"弟に",b:"弟",kind:"あいて",cs:"に",nt:"ひと"},{r:"M",w:"先生に",b:"先生",kind:"あいて",cs:"に",nt:"ひと"},
+ {r:"M",w:"カレーを",b:"カレー",kind:"たべもの",cs:"を",nt:"たべもの"},{r:"M",w:"ケーキを",b:"ケーキ",kind:"たべもの",cs:"を",nt:"たべもの"},
+ {r:"M",w:"手紙を",b:"手紙",kind:"もの",cs:"を",nt:"ぶんしょう"},{r:"M",w:"作文を",b:"作文",kind:"もの",cs:"を",nt:"ぶんしょう",ngP:["作った"]},{r:"M",w:"物語を",b:"物語",kind:"もの",cs:"を",nt:"ぶんしょう",okP:["話した"]},
+ {r:"M",w:"ていねいに",b:"ていねい",kind:"ようす",ngP:["走った","歩いた","遊んだ"]},
+ {r:"M",w:"元気よく",b:"元気",kind:"ようす",ngP:["見た","書いた","作った"]},
+ {r:"M",w:"しずかに",b:"しずか",kind:"ようす",ngP:["走った","遊んだ"]},
+ {r:"M",w:"大きな声で",b:"声",kind:"こえ",ng:["しずか"]},
+ {r:"M",w:"すこし",b:"すこし",kind:"ていど",any:true,ng:["ていねい","元気","しずか","声"]},
+ // ---- 名詞をくわしくする語（高学年だけ） ----
+ {r:"N",w:"やさしい",b:"やさしい",to:["ひと","どうぶつ"]},
+ {r:"N",w:"元気な",b:"元気",to:["ひと","どうぶつ"]},
+ {r:"N",w:"かわいい",b:"かわいい",to:["どうぶつ","もの","ひと"]},
+ {r:"N",w:"大きな",b:"大きな",to:["どうぶつ","もの","ばしょ","たべもの","ひと"],ngP:["大きい"]},
+ {r:"N",w:"小さな",b:"小さな",to:["どうぶつ","もの","ばしょ","たべもの","ひと"],ngN:["先生"],ngP:["大きい"]},
+ {r:"N",w:"おいしい",b:"おいしい",to:["たべもの"]},
+ {r:"N",w:"長い",b:"長い",to:["ぶんしょう"]},
+ {r:"N",w:"新しい",b:"新しい",to:["もの","ばしょ","ぶんしょう","ひと"],ngN:["子ども","弟","私"]},
+ {r:"N",w:"古い",b:"古い",to:["もの","ばしょ","ぶんしょう","ひと"],ngN:["子ども","弟","先生","私"]},
+];
+C.forEach((c,i)=>c.id=i);
+const RL={S:"主語",M:"修飾語",P:"述語",N:"名詞をくわしく"};
+const CAT={とき:"いつ",ばしょ:"どこで",あいて:"だれに",たべもの:"なにを",もの:"なにを",こえ:"どのように",ようす:"どのように",ていど:"どのくらい"};
+const ORD=["とき","ばしょ","あいて","たべもの","もの","こえ","ようす","ていど"];
+const MAXM=3; // 述語をくわしくする修飾語の上限（枠は 主語＋修飾語3＋述語＝5）
+
+// ================= 判定 =================
+// 文 = {s, ms:[修飾語], p, adj: Map(名詞カード→くわしくする語)}
+function judge(st){
+ const {s,ms,p,adj}=st, why=[];
+ if(!s) why.push("主語がない"); if(!p) why.push("述語がない");
+ if(why.length) return {ok:false,why};
+ if(ms.length>MAXM) why.push(`修飾語は${MAXM}まいまで`);
+ if(!p.subj.includes(s.tag)) why.push(`「${s.w}」は「${p.w}」の主語になれない`);
+ const kinds=new Set(),cs=new Set();
+ for(const m of ms){
+  if(!m.any&&!p.mods.includes(m.kind)&&!(m.okP&&m.okP.includes(p.w))) why.push(`「${m.w}」は「${p.w}」をくわしくできない`);
+  else if(m.ngP&&m.ngP.includes(p.w)) why.push(`「${m.w}」と「${p.w}」は合わない`);
+  if(kinds.has(m.kind)) why.push(`同じ種類の修飾語（${CAT[m.kind]}）が2つある`);
+  if(m.cs&&cs.has(m.cs)) why.push(`「${m.cs}」が2つある`);
+  if(m.b===s.b) why.push(`「${s.b}」が2回出てくる`);
+  for(const o of ms) if(m.ng&&m.ng.includes(o.b)) why.push(`「${m.w}」と「${o.w}」は意味がぶつかる`);
+  kinds.add(m.kind); if(m.cs) cs.add(m.cs);
+ }
+ for(const [noun,a] of adj){
+  if(noun.adj===false) why.push(`「${noun.w}」は くわしくできない`);
+  else if(!noun.nt||!a.to.includes(noun.nt)||(a.ngN&&a.ngN.includes(noun.b))) why.push(`「${a.w}」は「${noun.w.slice(0,-1)}」をくわしくできない`);
+  if(a.ngP&&a.ngP.includes(p.w)) why.push(`「${a.w}」と「${p.w}」は意味がかさなる`);
+ }
+ // 同じ言葉が2回出てこないか（名詞をくわしくする語もふくめて）
+ const bs=[s.b,...ms.map(m=>m.b),...[...adj.values()].map(a=>a.b)]; const seen=new Set();
+ for(const x of bs){ if(seen.has(x)&&!why.some(w=>w.includes("2回"))) why.push(`「${x}」が2回出てくる`); seen.add(x); }
+ // 「すこし」は ほかの〈どのように〉と いっしょに使えない（逆向きもチェック）
+ for(const m of ms) for(const o of ms) if(o.ng&&o.ng.includes(m.b)&&!why.some(w=>w.includes(o.w)&&w.includes(m.w))) why.push(`「${o.w}」と「${m.w}」は いっしょに使えない`);
+ return {ok:!why.length,why};
+}
+const sortM=ms=>[...ms].sort((a,b)=>ORD.indexOf(a.kind)-ORD.indexOf(b.kind));
+function words(st){
+ const out=[]; const push=c=>{ if(st.adj.has(c)) out.push(st.adj.get(c).w); out.push(c.w); };
+ if(st.s) push(st.s); sortM(st.ms).forEach(push); if(st.p) out.push(st.p.w); return out;
+}
+const textOf=st=>words(st).join(" ");
+const score=(st,ok)=>ok?words(st).length*2:0; // 高学年：へんな文はバースト
+
+// ランダムに文を作る（検査用）
+const S_=C.filter(c=>c.r==="S"),M_=C.filter(c=>c.r==="M"),P_=C.filter(c=>c.r==="P"),N_=C.filter(c=>c.r==="N");
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function randomSentence(wantOk,len){
+ for(let k=0;k<5000;k++){
+  const s=pick(S_),p=pick(P_); const nm=Math.floor(Math.random()*4); const ms=[];
+  while(ms.length<nm){const m=pick(M_); if(!ms.includes(m)) ms.push(m);}
+  const adj=new Map(); const nouns=[s,...ms].filter(c=>c.nt);
+  const na=Math.floor(Math.random()*(nouns.length+1));
+  for(let i=0;i<na;i++){ const noun=pick(nouns); if(!adj.has(noun)) adj.set(noun,pick(N_)); }
+  const st={s,ms,p,adj}; const n=2+ms.length+adj.size; if(len&&(len===6?n<6:n!==len)) continue;
+  if(judge(st).ok===wantOk) return st;
+ }
+ return null;
+}
+
+// ================= はみだし防止 =================
+function fit(el){ if(!el.dataset.fs) el.dataset.fs=parseFloat(getComputedStyle(el).fontSize); let f=+el.dataset.fs; el.style.fontSize=f+"px"; while(el.scrollWidth>el.clientWidth&&f>8){f--;el.style.fontSize=f+"px"} }
+function fitSame(els){ els.forEach(fit); const m=Math.min(...els.map(e=>parseFloat(e.style.fontSize))); els.forEach(e=>e.style.fontSize=m+"px"); }
+
+// ================= 報告の保存 =================
+let flags=[]; try{flags=JSON.parse(localStorage.getItem("wp_high_flags")||"[]")}catch(e){}
+const saveF=()=>{try{localStorage.setItem("wp_high_flags",JSON.stringify(flags))}catch(e){}};
+function toggleFlag(t,soft){ const i=flags.findIndex(f=>f.t===t); if(i>=0) flags.splice(i,1); else flags.push({t,soft}); saveF(); }
+
+// ================= あそぶ =================
+const $=id=>document.getElementById(id);
+const DECK24=["先生が","子どもが","友だちが","犬が","ねこが","私は","食べた","歩いた","話した","見た","作った","読んだ","放課後","日曜日に","図書館で","公園で","ケーキを","物語を","ていねいに","すこし","やさしい","大きな","おいしい","新しい"];
+let mode="deck", pile=[], disc=[], note="";
+let hand=[], st={s:null,ms:[],p:null,adj:new Map()}, holdAdj=null;
+function canMake(h){ const S=h.filter(c=>c.r==="S"),P=h.filter(c=>c.r==="P"); return S.some(s=>P.some(p=>judge({s,ms:[],p,adj:new Map()}).ok)); }
+const shuf=a=>a.sort(()=>Math.random()-.5);
+function drawTo8(){ while(hand.length<8){ if(!pile.length){ if(!disc.length) break; pile=shuf(disc); disc=[]; } hand.push(pile.pop()); } }
+function deal(){
+ note="";
+ if(mode==="all"){ for(let k=0;k<200;k++){ hand=shuf([...C]).slice(0,8); if(canMake(hand)) break; } }
+ else { pile=shuf(DECK24.map(w=>C.find(c=>c.w===w))); disc=[]; hand=[]; drawTo8(); ensure(); }
+ reset();
+}
+function ensure(){ let k=0; while(!canMake(hand)&&k<20){ disc.push(...hand); hand=[]; drawTo8(); k++; } if(k) note="文が作れない手札だったので配り直しました"; }
+function nextRound(){
+ if(mode==="all") return deal();
+ const u=used(); hand=hand.filter(c=>!u.has(c)); disc.push(...u); drawTo8(); note=""; ensure(); reset();
+}
+function reset(){ st={s:null,ms:[],p:null,adj:new Map()}; holdAdj=null; render(); }
+function used(){ return new Set([st.s,st.p,...st.ms,...st.adj.values()].filter(Boolean)); }
+function count(){ return [st.s,st.p].filter(Boolean).length+st.ms.length+st.adj.size; }
+function render(){
+ const u=used();
+ $("info1").textContent=`いま ${count()}語`;
+ $("info2").textContent=holdAdj?`「${holdAdj.w}」を どの名詞に かさねる？`:note||(mode==="deck"?`デッキ24枚：山札 ${pile.length}・捨て札 ${disc.length}`:"全52枚から配る");
+ // 文の並び（主語・修飾語・述語）
+ const order=[]; if(st.s) order.push(st.s); sortM(st.ms).forEach(m=>order.push(m)); if(st.p) order.push(st.p);
+ const line=$("line"); line.innerHTML="";
+ for(let i=0;i<5;i++){
+  const c=order[i]; const d=document.createElement("div");
+  if(!c){ d.className="slot empty"; d.textContent="　"; line.appendChild(d); continue; }
+  d.className="slot";
+  const a=st.adj.get(c);
+  const top=document.createElement("div");
+  if(a){ top.className="adj"; top.innerHTML=`<div class="fit">${a.w}</div>`; top.onclick=()=>{st.adj.delete(c);render();}; }
+  else if(holdAdj&&c.nt!==undefined){ top.className="adj target"; top.innerHTML=`<div class="fit">ここに かさねる</div>`; top.onclick=()=>{ st.adj.set(c,holdAdj); holdAdj=null; render(); }; }
+  else { top.className="adj none"; top.innerHTML=`<div class="fit">${c.nt!==undefined?"名詞":"　"}</div>`; }
+  const w=document.createElement("div"); w.className="word "+c.r; w.innerHTML=`<div class="lb">${RL[c.r]}</div><div class="fit">${c.w}</div>`;
+  w.onclick=()=>{ if(c===st.s) st.s=null; else if(c===st.p) st.p=null; else st.ms=st.ms.filter(x=>x!==c); st.adj.delete(c); render(); };
+  d.appendChild(top); d.appendChild(w); line.appendChild(d);
+ }
+ // 手札
+ const h=$("hand"); h.innerHTML="";
+ hand.forEach(c=>{
+  const d=document.createElement("div"); const isU=u.has(c);
+  d.className="card "+c.r+(isU?" used":"")+(holdAdj===c?" pick":"");
+  const sub=c.r==="M"?CAT[c.kind]:c.r==="S"?c.tag:c.r==="N"?"かさねて使う":"";
+  d.innerHTML=`<div class="lb fitl">${RL[c.r]}</div><div class="fit">${c.w}</div><div class="gp fit">${sub}</div>`;
+  if(!isU) d.onclick=()=>{
+   if(c.r==="N"){ holdAdj=holdAdj===c?null:c; return render(); }
+   holdAdj=null;
+   if(c.r==="S"){ if(st.s) st.adj.delete(st.s); st.s=c; }
+   else if(c.r==="P") st.p=c;
+   else { if(st.ms.length>=MAXM) return; st.ms.push(c); }
+   render();
+  };
+  h.appendChild(d);
+ });
+ $("sen").textContent=textOf(st)||"カードを タップして 文を つくろう";
+ $("judge").disabled=!(st.s&&st.p);
+ fit($("sen")); fit($("info1")); fit($("info2"));
+ fitSame([...document.querySelectorAll("#hand .card > .fit:not(.gp)")]);
+ fitSame([...document.querySelectorAll("#line .word .fit")]);
+ document.querySelectorAll("#line .adj .fit, #hand .gp, #hand .fitl, #line .lb").forEach(fit);
+}
+let last=null;
+$("judge").onclick=()=>{
+ const r=judge(st), t=textOf(st); last={t,ok:r.ok};
+ $("rBig").innerHTML=r.ok?`<span class="ok">成立！ ${words(st).length}語×2＝${score(st,true)}点</span>`:`<span class="ng">バースト！ 0点</span>`;
+ $("rSen").textContent=t; $("rWhy").textContent=r.ok?"主語と述語、かかり方も ばっちり":r.why.slice(0,2).join(" ／ ");
+ $("res").classList.add("on"); fit($("rSen")); fit($("rBig"));
+};
+$("agree").onclick=()=>{$("res").classList.remove("on");nextRound()};
+$("disagree").onclick=()=>{ if(!flags.some(f=>f.t===last.t)) toggleFlag(last.t,last.ok?"自然":"不自然"); $("res").classList.remove("on"); nextRound(); };
+$("clear").onclick=reset; $("deal").onclick=deal;
+$("mode").onclick=()=>{ mode=mode==="deck"?"all":"deck"; $("mode").textContent=mode==="deck"?"いま：デッキ24枚":"いま：全52枚"; deal(); };
+
+// ================= ランダム検査 =================
+let lmode=true, only6=false, sample=[];
+function newSample(){ sample=[]; for(let i=0;i<8;i++){ const s=randomSentence(lmode,only6?6:0); if(s) sample.push(textOf(s)); } renderList(); }
+function renderList(){
+ $("lmode").textContent=lmode?"表示：自然と判定":"表示：不自然と判定";
+ $("lcount").textContent=only6?"6語以上の文だけ":"すべての長さ";
+ const rows=$("rows"); rows.innerHTML="";
+ sample.forEach(t=>{ const f=flags.some(x=>x.t===t); const d=document.createElement("div"); d.className="r"+(f?" flag":"");
+  d.innerHTML=`<div class="fit">${t}</div><button>${f?"報告ずみ":"おかしい"}</button>`;
+  d.querySelector("button").onclick=()=>{toggleFlag(t,lmode?"自然":"不自然");renderList()}; rows.appendChild(d); });
+ rows.querySelectorAll(".fit").forEach(fit);
+}
+$("lmode").onclick=()=>{lmode=!lmode;newSample()}; $("lnew").onclick=newSample; $("lsw").onclick=()=>{only6=!only6;newSample()};
+
+// ================= 報告 =================
+let rp=0;
+function renderRep(){
+ const per=8,pages=Math.max(1,Math.ceil(flags.length/per)); rp=rp%pages;
+ $("repInfo").textContent=flags.length?`報告 ${flags.length}件（${rp+1}/${pages}ページ）`:"判定がおかしい文を報告すると、ここにたまります";
+ const rows=$("repRows"); rows.innerHTML="";
+ flags.slice(rp*per,rp*per+per).forEach(f=>{ const d=document.createElement("div"); d.className="r flag";
+  d.innerHTML=`<div><div class="fit">${f.t}</div><div class="sub">ソフトの判定：${f.soft}</div></div><button>とりけし</button>`;
+  d.querySelector("button").onclick=()=>{toggleFlag(f.t);renderRep()}; rows.appendChild(d); });
+ rows.querySelectorAll(".fit").forEach(fit);
+}
+$("rnext").onclick=()=>{rp++;renderRep()};
+$("copy").onclick=()=>{
+ const t="高学年 判定がおかしい文：\n"+flags.map(f=>`・${f.t}（ソフトは${f.soft}と判定）`).join("\n");
+ const done=()=>{$("copy").textContent="コピーしました";setTimeout(()=>$("copy").textContent="コピーしてClaudeにわたす",1500)};
+ const fb=()=>{ $("repRows").innerHTML=`<textarea style="grid-row:1/-1;width:100%;height:100%;font-size:14px;padding:8px;border-radius:8px" readonly></textarea>`; const ta=$("repRows").querySelector("textarea"); ta.value=t; ta.select(); $("repInfo").textContent="長押しでコピーしてください"; };
+ try{ navigator.clipboard.writeText(t).then(done).catch(fb); }catch(e){ fb(); }
+};
+
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
+ document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===b));
+ document.querySelectorAll(".page").forEach(p=>p.classList.toggle("on",p.id===b.dataset.p));
+ if(b.dataset.p==="list") newSample(); if(b.dataset.p==="rep") renderRep(); if(b.dataset.p==="play") render();
+});
+window.addEventListener("resize",()=>{document.querySelectorAll(".fit").forEach(e=>{delete e.dataset.fs;e.style.fontSize=""});render()});
+deal();
+</script>
+</body>
+</html>

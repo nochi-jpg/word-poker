@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>ことばポーカー カード選択</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&amp;family=Zen+Maru+Gothic:wght@500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.dots{background-image:radial-gradient(rgba(0,0,0,.18) 22%,transparent 23%);background-size:14px 14px}
+.hatch{background-image:repeating-linear-gradient(-45deg,rgba(255,255,255,.12) 0 10px,transparent 10px 20px)}
+</style>
+</helmet>
+<div style="width: 1366px; height: 768px; position: relative; overflow: hidden; background: {{red}}; font-family: 'Zen Maru Gothic', sans-serif; color: #111">
+
+  <!-- 背景：網点と黒い斜めの帯 -->
+  <div class="dots" style="position: absolute; inset: 0"></div>
+  <div style="position: absolute; left: -120px; top: 250px; width: 1700px; height: 120px; background: #111; transform: rotate(-4deg)"></div>
+
+  <!-- 左上：ディーラー番号と勝ち星 -->
+  <div style="position: absolute; left: 24px; top: 20px; display: flex; gap: 12px; align-items: center">
+    <div style="background: #111; color: #fff; padding: 8px 26px; transform: skewX(-14deg); font-family: 'Dela Gothic One', sans-serif; font-size: 26px; box-shadow: 6px 6px 0 #fff">ディーラー 1 / 4</div>
+    <div style="display: flex; gap: 6px; background: #fff; padding: 8px 16px; transform: skewX(-14deg); box-shadow: 6px 6px 0 #111; align-items: center">
+      <span style="font-weight: 900; font-size: 16px">あなた</span>
+      <svg width="26" height="26" viewBox="0 0 24 24" role="img" aria-label="勝ち1"><path d="M12 2l3 7h7l-5.5 4.5 2 7.5L12 17l-6.5 4 2-7.5L2 9h7z" fill="#d7141f" stroke="#111" stroke-width="1.5"/></svg>
+      <svg width="26" height="26" viewBox="0 0 24 24" role="img" aria-label="空き"><path d="M12 2l3 7h7l-5.5 4.5 2 7.5L12 17l-6.5 4 2-7.5L2 9h7z" fill="none" stroke="#111" stroke-width="1.5"/></svg>
+      <span style="font-weight: 900; font-size: 16px; margin-left: 10px">ディーラー</span>
+      <svg width="26" height="26" viewBox="0 0 24 24" role="img" aria-label="空き"><path d="M12 2l3 7h7l-5.5 4.5 2 7.5L12 17l-6.5 4 2-7.5L2 9h7z" fill="none" stroke="#111" stroke-width="1.5"/></svg>
+      <svg width="26" height="26" viewBox="0 0 24 24" role="img" aria-label="空き"><path d="M12 2l3 7h7l-5.5 4.5 2 7.5L12 17l-6.5 4 2-7.5L2 9h7z" fill="none" stroke="#111" stroke-width="1.5"/></svg>
+    </div>
+  </div>
+
+  <!-- 右上：入れかえの残り -->
+  <div style="position: absolute; right: 30px; top: 20px; background: #fff; transform: skewX(-14deg); box-shadow: 6px 6px 0 #111; padding: 6px 22px; display: flex; gap: 10px; align-items: baseline">
+    <span style="font-weight: 900; font-size: 16px">入れかえ のこり</span>
+    <span style="font-family: 'Dela Gothic One', sans-serif; font-size: 30px; color: #d7141f">8</span>
+  </div>
+
+  <!-- ディーラー（立ち絵の場所） -->
+  <div class="hatch" style="position: absolute; left: 860px; top: 70px; width: 300px; height: 300px; border: 4px solid #111; background-color: #a80e17; display: flex; align-items: center; justify-content: center; transform: rotate(3deg)">
+    <span style="color: #fff; font-weight: 900; font-size: 18px; text-align: center; white-space: pre-line">ディーラー立ち絵
+（基本）</span>
+  </div>
+
+  <!-- ふきだし -->
+  <div style="position: absolute; left: 470px; top: 92px; width: 380px; height: 120px; background: #111; clip-path: polygon(0 12%, 94% 0, 100% 70%, 84% 72%, 98% 100%, 70% 76%, 4% 88%); transform: translate(8px, 8px)"></div>
+  <div style="position: absolute; left: 470px; top: 92px; width: 380px; height: 120px; background: #fff; clip-path: polygon(0 12%, 94% 0, 100% 70%, 84% 72%, 98% 100%, 70% 76%, 4% 88%); display: flex; align-items: center; padding: 0 36px 14px; box-sizing: border-box">
+    <span style="font-weight: 900; font-size: 20px">[ディーラーのセリフ]</span>
+  </div>
+
+  <!-- いま作っている文 -->
+  <div style="position: absolute; left: 40px; top: 262px; width: 760px; transform: rotate(-4deg); display: flex; flex-direction: column; gap: 6px">
+    <span style="color: #fff; font-weight: 900; font-size: 15px; letter-spacing: 2px">いまの文</span>
+    <span style="color: #fff; font-family: 'Dela Gothic One', sans-serif; font-size: 34px; white-space: nowrap">やさしい 犬が 公園で ケーキを 食べた</span>
+  </div>
+  <div style="position: absolute; left: 640px; top: 300px; background: #fff; transform: rotate(-4deg) skewX(-12deg); box-shadow: 5px 5px 0 #d7141f; padding: 6px 18px; font-weight: 900; font-size: 18px">5語 → 成立なら 10点</div>
+
+  <!-- 文の枠（主語・修飾語・修飾語・修飾語・述語） -->
+  <div style="position: absolute; left: 40px; top: 404px; display: flex; gap: 14px">
+    <sc-for list="{{slots}}" as="s" hint-placeholder-count="5">
+      <div style="width: 156px; height: 150px; display: flex; flex-direction: column; gap: 6px">
+        <div style="height: 30px; display: flex; align-items: center; justify-content: center; background: {{s.adjBg}}; border: {{s.adjBorder}}; font-weight: 900; font-size: 15px; color: #111; transform: skewX(-8deg)">{{s.adj}}</div>
+        <div style="flex: 1; background: {{s.body}}; border: {{s.border}}; box-shadow: {{s.shadow}}; display: flex; flex-direction: column; transform: skewX(-8deg)">
+          <div style="height: 28px; background: {{s.band}}; color: {{s.bandInk}}; font-weight: 900; font-size: 14px; display: flex; align-items: center; justify-content: center">{{s.role}}</div>
+          <div style="flex: 1; display: flex; align-items: center; justify-content: center; font-family: 'Dela Gothic One', sans-serif; font-size: 26px; color: #111">{{s.word}}</div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- 下：黒い帯と手札 -->
+  <div style="position: absolute; left: -40px; top: 584px; width: 1450px; height: 240px; background: #111; transform: rotate(-2deg)"></div>
+  <div style="position: absolute; left: 34px; top: 598px; display: flex; gap: 12px">
+    <sc-for list="{{hand}}" as="c" hint-placeholder-count="8">
+      <button style="width: 108px; height: 146px; padding: 0; background: #fff; border: 3px solid #fff; opacity: {{c.op}}; display: flex; flex-direction: column; cursor: pointer; transform: rotate({{c.tilt}}deg); font-family: inherit">
+        <span style="height: 26px; width: 100%; background: {{c.band}}; color: {{c.bandInk}}; font-weight: 900; font-size: 13px; display: flex; align-items: center; justify-content: center">{{c.role}}</span>
+        <span style="flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; font-family: 'Dela Gothic One', sans-serif; font-size: 20px; color: #111">{{c.word}}</span>
+        <span style="height: 24px; width: 100%; font-weight: 700; font-size: 12px; color: #444; display: flex; align-items: center; justify-content: center">{{c.sub}}</span>
+      </button>
+    </sc-for>
+  </div>
+
+  <!-- ボタン -->
+  <button style="position: absolute; left: 1010px; top: 620px; width: 140px; height: 60px; background: #fff; border: 3px solid #fff; transform: skewX(-14deg); box-shadow: 5px 5px 0 #d7141f; font-family: 'Dela Gothic One', sans-serif; font-size: 22px; color: #111; cursor: pointer">入れかえ</button>
+  <button style="position: absolute; left: 1170px; top: 604px; width: 170px; height: 92px; background: {{red}}; border: 4px solid #fff; transform: skewX(-14deg) rotate(-3deg); box-shadow: 7px 7px 0 #fff; font-family: 'Dela Gothic One', sans-serif; font-size: 40px; color: #fff; cursor: pointer">決定！</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"red":{"editor":"color","default":"#d7141f","options":["#d7141f","#c8102e","#e8380d"]},"$preview":{"width":1366,"height":768}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const C = {
+      S: { band: '#d7141f', ink: '#fff' },
+      M: { band: '#f2b705', ink: '#111' },
+      P: { band: '#1e4fd8', ink: '#fff' },
+      N: { band: '#3dd27a', ink: '#111' },
+    };
+    const filled = (r, role, word, adj) => ({
+      role, word, body: '#fff', border: '3px solid #111', shadow: '6px 6px 0 #111',
+      band: C[r].band, bandInk: C[r].ink,
+      adj: adj || 'くわしくする語', adjBg: adj ? C.N.band : 'transparent', adjBorder: adj ? '3px solid #111' : '2px dashed rgba(255,255,255,.7)',
+    });
+    const empty = { role: '修飾語', word: '', body: 'rgba(255,255,255,.15)', border: '3px dashed #fff', shadow: 'none', band: 'rgba(255,255,255,.25)', bandInk: '#fff', adj: '', adjBg: 'transparent', adjBorder: '2px dashed rgba(255,255,255,0)' };
+    const hand = [
+      ['S', '主語', '犬が', 'どうぶつ', true], ['N', 'くわしく', 'やさしい', 'かさねて使う', true], ['M', '修飾語', '公園で', 'どこで', true],
+      ['M', '修飾語', 'ケーキを', 'なにを', true], ['P', '述語', '食べた', 'いつ・どこ・なに', true],
+      ['S', '主語', '先生が', 'ひと', false], ['M', '修飾語', '放課後', 'いつ', false], ['P', '述語', '読んだ', 'なに・どこ', false],
+    ].map(([r, role, word, sub, used], i) => ({ role, word, sub, band: C[r].band, bandInk: C[r].ink, op: used ? 0.35 : 1, tilt: [-3, 2, -1, 3, -2, 1, -3, 2][i] }));
+    return {
+      red: this.props.red ?? '#d7141f',
+      slots: [filled('S', '主語', '犬が', 'やさしい'), filled('M', '修飾語', '公園で'), filled('M', '修飾語', 'ケーキを'), empty, filled('P', '述語', '食べた')],
+      hand,
+    };
+  }
+}
+</script>
+</body>
+</html>
