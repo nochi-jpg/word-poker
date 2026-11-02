@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ことばポーカー タイトル画面サンプル</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@700;900&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;user-select:none}
+body{font-family:"Zen Maru Gothic",sans-serif;font-weight:900}
+#stage{position:absolute;left:0;top:0;width:1366px;height:768px;overflow:hidden;transform-origin:0 0;background:#0a0a0a}
+/* ---- 動く背景 ---- */
+.bg{position:absolute;inset:-200px}
+#bgStripe{background:repeating-linear-gradient(-30deg,#0a0a0a 0 80px,#141414 80px 160px);animation:stripe 6s linear infinite}
+@keyframes stripe{to{transform:translate(185px,0)}}
+#bgRed{left:-300px;right:auto;width:900px;top:-300px;bottom:-300px;background:#d7141f;transform:skewX(-18deg);
+ background-image:radial-gradient(rgba(0,0,0,.28) 24%,transparent 26%);background-size:16px 16px;animation:redPulse 5s ease-in-out infinite}
+@keyframes redPulse{0%,100%{transform:skewX(-18deg) translateX(0)}50%{transform:skewX(-18deg) translateX(30px)}}
+#bgRed2{left:520px;width:60px;top:-300px;bottom:-300px;right:auto;background:#fff;transform:skewX(-18deg);animation:redPulse 5s ease-in-out infinite;opacity:.9}
+#sweep{position:absolute;top:-100px;bottom:-100px;width:260px;left:-400px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);transform:skewX(-18deg);animation:sweep 4.5s cubic-bezier(.6,0,.4,1) infinite}
+@keyframes sweep{0%{left:-400px}60%,100%{left:1600px}}
+.ticker{position:absolute;left:0;white-space:nowrap;font-family:"Dela Gothic One";font-size:120px;line-height:130px;color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.08);animation:tick 30s linear infinite}
+.ticker.b{animation-direction:reverse;-webkit-text-stroke-color:rgba(215,20,31,.25)}
+@keyframes tick{to{transform:translateX(-50%)}}
+/* ---- シルエットの相手 ---- */
+#sil{position:absolute;left:560px;top:30px;width:560px;height:760px;pointer-events:none}
+#sil .ln{position:absolute;left:-200px;right:-200px;height:6px;background:#fff;opacity:0;transform:skewY(-8deg)}
+#sil img{position:absolute;left:80px;top:0;height:880px;filter:brightness(0) drop-shadow(6px 0 0 #d7141f) drop-shadow(-3px 0 0 #fff);opacity:0}
+#sil .q{position:absolute;left:60px;top:560px;font-family:"Dela Gothic One";font-size:150px;color:#d7141f;-webkit-text-stroke:5px #000;paint-order:stroke fill;opacity:0;transform:rotate(-8deg)}
+#sil.in img{animation:silIn 10s cubic-bezier(.2,.9,.2,1) both}
+#sil.in .q{animation:qIn 10s cubic-bezier(.2,.9,.2,1) both}
+#sil.in .ln{animation:lnIn 10s ease-out both}
+@keyframes silIn{0%{transform:translateX(700px) skewX(-12deg);opacity:0}5%{transform:translateX(-20px) skewX(4deg);opacity:1}8%{transform:translateX(0) skewX(0)}88%{transform:translateX(-30px);opacity:1}94%,100%{transform:translateX(-800px) skewX(14deg);opacity:0}}
+@keyframes qIn{0%,6%{opacity:0;transform:rotate(-8deg) scale(2.5)}9%{opacity:1;transform:rotate(-8deg) scale(1)}86%{opacity:1}92%,100%{opacity:0;transform:rotate(-8deg) scale(.6)}}
+@keyframes lnIn{0%{opacity:0}2%{opacity:.9;transform:skewY(-8deg) scaleX(1)}7%,100%{opacity:0;transform:skewY(-8deg) scaleX(0)}}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+#flash.on{animation:flash .35s ease-out}
+@keyframes flash{0%{opacity:.55}100%{opacity:0}}
+/* ---- ロゴ ---- */
+#logo{position:absolute;left:30px;top:88px;width:760px;filter:drop-shadow(10px 10px 0 #000);animation:logoIn .7s .1s cubic-bezier(.2,1.4,.4,1) both,float 4s 1s ease-in-out infinite}
+@keyframes logoIn{from{transform:scale(1.8) rotate(-6deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes float{0%,100%{translate:0 0}50%{translate:0 -10px}}
+/* ---- メニュー ---- */
+#menu{position:absolute;left:930px;top:200px;width:380px;display:flex;flex-direction:column;gap:18px}
+.mb{position:relative;height:64px;border:3px solid #fff;background:#0a0a0a;color:#fff;font-family:"Dela Gothic One";font-size:28px;transform:skewX(-14deg);
+ box-shadow:7px 7px 0 #d7141f;cursor:pointer;overflow:hidden;animation:mIn .45s cubic-bezier(.2,1.3,.4,1) both}
+.mb span{display:block;transform:skewX(14deg)}
+.mb::before{content:"";position:absolute;inset:0;background:#d7141f;transform:translateX(-102%);transition:transform .18s cubic-bezier(.2,.8,.2,1)}
+.mb:hover::before{transform:none}
+.mb span{position:relative}
+.mb:hover{animation:shake .3s;box-shadow:7px 7px 0 #fff}
+.mb:active{transform:skewX(-14deg) translate(4px,4px) scale(.97);box-shadow:2px 2px 0 #fff}
+@keyframes mIn{from{transform:skewX(-14deg) translateX(520px);opacity:0}to{transform:skewX(-14deg);opacity:1}}
+@keyframes shake{0%,100%{transform:skewX(-14deg)}25%{transform:skewX(-14deg) translateX(-6px) rotate(-1deg)}75%{transform:skewX(-14deg) translateX(5px) rotate(1deg)}}
+#sign{position:absolute;left:40px;top:716px;color:#fff;font-size:16px;opacity:.8}
+#note{position:absolute;right:20px;top:716px;color:#888;font-size:14px}
+</style>
+</head>
+<body>
+<div id="stage">
+ <div class="bg" id="bgStripe"></div>
+ <div class="ticker" style="top:520px">KOTOBA POKER ことばポーカー KOTOBA POKER ことばポーカー KOTOBA POKER ことばポーカー KOTOBA POKER ことばポーカー </div>
+ <div class="ticker b" style="top:640px">主語 修飾語 述語 SUBJECT PREDICATE 主語 修飾語 述語 SUBJECT PREDICATE 主語 修飾語 述語 SUBJECT PREDICATE </div>
+ <div class="bg" id="bgRed"></div><div class="bg" id="bgRed2"></div>
+ <div id="sweep"></div>
+ <div id="sil"><div class="ln" style="top:200px"></div><div class="ln" style="top:330px"></div><div class="ln" style="top:460px"></div><img id="silImg" alt=""><div class="q">？？？</div></div>
+ <div id="flash"></div>
+ <img id="logo" src="logo.png" alt="ことばポーカー">
+ <div id="menu">
+  <button class="mb" style="animation-delay:.35s"><span>プレイ</span></button>
+  <button class="mb" style="animation-delay:.42s"><span>あそびかた</span></button>
+  <button class="mb" style="animation-delay:.49s"><span>おはなし</span></button>
+  <button class="mb" style="animation-delay:.56s"><span>ハイスコア</span></button>
+  <button class="mb" style="animation-delay:.63s"><span>オプション</span></button>
+ </div>
+ <div id="sign">作：K.nom</div>
+ <div id="note">サンプル：相手のシルエットが10秒ごとに入れかわります</div>
+</div>
+<script>
+const st=document.getElementById("stage");
+function fit(){const s=Math.min(innerWidth/1366,innerHeight/768);st.style.transform=`scale(${s})`;st.style.left=(innerWidth-1366*s)/2+"px";st.style.top=(innerHeight-768*s)/2+"px"}
+addEventListener("resize",fit);fit();
+const CH=["c09","c10","c05","c11","c08","c12"];let last=-1;
+const sil=document.getElementById("sil"),img=document.getElementById("silImg"),fl=document.getElementById("flash");
+function next(){let i;do{i=Math.floor(Math.random()*CH.length)}while(i===last);last=i;
+ img.src=`chara/${CH[i]}_0.webp`;sil.classList.remove("in");void sil.offsetWidth;sil.classList.add("in");
+ setTimeout(()=>{fl.classList.remove("on");void fl.offsetWidth;fl.classList.add("on")},450);}
+setTimeout(next,900);setInterval(next,10000);
+</script>
+</body>
+</html>
