@@ -1,6 +1,6 @@
 # ことばポーカー（word-poker）
 
-小学生向けの国語学習ゲーム。カードで「主語＋修飾語＋述語」の文を作り、ディーラーと点数を競う。
+小学生向けの国語学習ゲーム。カードで「主語＋修飾語＋述語」の文を作り、あいてと点数を競う。
 バックショットルーレット風の主観視点、ペルソナ風の赤基調UI、1回5〜10分の単発ミニゲーム。
 
 - 対象：小学2〜6年（低学年・中学年・高学年の3モード）
@@ -20,14 +20,16 @@ https://claude.ai/artifact/Mn3KAQ54vxpKrTKtc4xGP3
 | `dist/kotoba-poker.html` | **本番**の配布用ファイル。three.js・フォント・画像をすべて埋め込んだ1ファイル。ダブルクリックで動く |
 | `tools/build.py` | `game/` から `dist/kotoba-poker.html` を作る |
 | `tools/make_fonts.py` | ゲームで使う文字だけのフォント（woff2）を作る。文章やカードを変えたら実行 |
-| `tools/check_layout.js` | 自動チェック（かぶり・はみだし・画面外のボタン、通しプレイ） |
+| `tools/check_layout.js` | 自動チェック（かぶり・はみだし・ふりがなのはみだし・画面外のボタン、通しプレイ） |
+| `tools/check_yomi.js` | ふりがなチェック（ゲームの文字のすべての漢字に読みがあるか） |
 | `prototypes/judge-test-mid/` | 判定テスト（中学年カード42枚・全文リスト・判定がおかしい文の報告） |
 | `prototypes/judge-test-high/` | 判定テスト（高学年・名詞をくわしくする語を重ねる・24枚デッキモード） |
 | `prototypes/battle-mid/` | 旧案（スレスパ風の3連戦）の試作。カードデータと判定は流用できる |
 | `prototypes/camera/` | 3Dカメラの最初の試作（正面→俯瞰→同時にめくる→正面） |
 | `prototypes/classroom/` | いちばん新しい試作。旧校舎の教室（カキワリ）・ステージ別照明・立ち絵12人・タイトル（仮） |
 | `design/` | ペルソナ風UIのデザイン案（カード選択画面・判定画面。Claudeのデザインキャンバス形式） |
-| `sim/cpu_sim.js` | 全学年のCPU戦シミュレーター（`node sim/cpu_sim.js 低学年` など） |
+| `sim/cpu_sim.js` | 全学年のCPU戦シミュレーター（第1弾。カードは試作から読む） |
+| `sim/hard_sim.js` | 本番の data.js・logic.js をそのまま使うシミュレーター（`node sim/hard_sim.js 高学年 hard 1000`）。ハードの数値はこれで決めた |
 | `tools/process_chara.py` | 立ち絵シートから、同じサイズ・足元そろえ・白い縁取りの立ち絵を作るスクリプト |
 | `assets/source/` | 元の素材（立ち絵シート・ロゴ・ショップ・テクスチャ・第1話の教室背景） |
 | `docs/HANDOFF.md` | 別のチャットで続きを始めるための引き継ぎ文 |
@@ -37,11 +39,13 @@ https://claude.ai/artifact/Mn3KAQ54vxpKrTKtc4xGP3
 ```
 python tools/make_fonts.py        # 文字を変えたとき
 python tools/build.py             # → dist/kotoba-poker.html
-node tools/check_layout.js        # 画面ごとのレイアウトチェック（1366×768 と スマホ横 915×412）
-node tools/check_layout.js --play 高学年 --shots out   # 通しプレイ＋スクリーンショット
+node tools/check_yomi.js          # ふりがなの読みがない漢字がないか
+node tools/check_layout.js        # game/ を中で小さなサーバーで開いてチェック（1366×768 と スマホ横 915×412）
+node tools/check_layout.js --play 高学年 --shots out          # 通しプレイ＋スクリーンショット
+node tools/check_layout.js --play 高学年 --hard --shots out   # ハードの通しプレイ（ステージ？・第5話まで）
 ```
 
-`game/js` の中身：`data.js`（カード・学年・ディーラー）、`logic.js`（判定・得点・ディーラーの文・山札）、`save.js`（セーブ）、
+`game/js` の中身：`yomi.js`（ふりがなの読みの表。読みは「漢字＋うしろのかな」で決める。決まらない読みは文の中に `{漢字|よみ}`）、`sound.js`（BGM・効果音）、`data.js`（カード・学年・あいて・ハードの数値）、`logic.js`（判定・得点・ディーラーの文・山札）、`save.js`（セーブ）、
 `stage3d.js`（3Dの教室・カメラ）、`ui.js`（文字ウインドウ・ポップアップ・カットイン）、`story.js`（おはなし）、`battle.js`（対戦・ショップ・クリア）、`main.js`（タイトル・学年選択・あそびかた・オプション）。
 
 ## 試作の動かし方
