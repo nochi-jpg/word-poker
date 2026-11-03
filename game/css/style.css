@@ -432,3 +432,5 @@ rt{font-family:"KPMaru",sans-serif;font-weight:900;font-size:.42em;line-height:1
 .jbs{margin-top:-2px}
 /* 判定の帯：1行のときは 上下まん中 */
 #jBand .jtx{line-height:1.5!important;height:58px!important;display:flex;align-items:center;padding-top:9px}
+/* ハードのチカチカ：暗い瞬間は 画面全体を すこし暗く */
+#stage.flickDark #vig{background:rgba(0,0,0,.55)!important}

@@ -19,7 +19,7 @@
     save(); return KP.runLoop();
   };
   function newMatch() {
-    const r = R(); r.m = { pile: KP.shuffle(r.deck.slice()), disc: [], hand: [], win: 0, lose: 0 };
+    const r = R(), g = G(); r.m = { pile: KP.shuffle(r.deck.slice()), disc: [], hand: [], win: 0, lose: 0, size: r.hard && g.hardHand ? g.hardHand : g.hand };
     KP.refill(r.grade, r.m); // 最初のドローもすぐ保存（引き直し防止）
   }
   const lightOf = r => r.hard ? (r.d === 4 ? 4 : 5) : r.d;

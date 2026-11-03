@@ -103,12 +103,25 @@
     { tint: [.3, .4, .3], amb: .16, lamp: .75, vig: "rgba(0,8,0,.88)", flick: true }, // 4 ステージ？：あかりが きえかけた教室
     { tint: [.55, .7, .52], amb: .3, lamp: 1.05, vig: "rgba(0,18,4,.62)", flick: true }, // 5 ハード：うす暗く緑っぽい。電球がときどきチカチカ
   ];
+  // 平均40秒（いままでの 15分の1の回数）
+  const flickWait = () => 12000 + Math.random() * 56000;
+  // 明るさをまとめて かえる（チカチカ用）：部屋・机・立ち絵・電球
+  function setBright(k) {
+    const L = S3._L; if (!L) return;
+    roomMats.forEach(m => m.color.setRGB(...L.tint.map(v => v * k)));
+    dealer.material.color.setRGB(...L.tint.map(v => (.5 + v * .5) * k));
+    tableMats.forEach(m => m.color.setRGB(...L.tint.map(v => (.4 + v * .6) * k)));
+    amb.intensity = L.amb * k; lamp.intensity = L.lamp * k;
+    bulbMat.color.setHex(k < .4 ? 0x333322 : 0xe8ffd0);
+    if (S3._vigEl) S3._vigEl.style.opacity = k < .4 ? "1" : "";
+    if (KP.$("fade")) KP.$("stage").classList.toggle("flickDark", k < .4);
+  }
   S3.light = function (i, vigEl) {
-    const L = LIGHTS[i];
+    const L = LIGHTS[i]; S3._L = L; S3._vigEl = vigEl; KP.$("stage").classList.remove("flickDark"); if (vigEl) vigEl.style.opacity = "";
     roomMats.forEach(m => m.color.setRGB(...L.tint));
     dealer.material.color.setRGB(...L.tint.map(v => .5 + v * .5));
     tableMats.forEach(m => m.color.setRGB(...L.tint.map(v => .4 + v * .6)));
-    amb.intensity = L.amb; lamp.intensity = L.lamp; S3.lampBase = L.lamp; S3.flick = !!L.flick; lamp.color.setHex(L.flick ? 0xd8ffc0 : 0xffd59a); if (bulbMat) bulbMat.color.setHex(L.flick ? 0xe8ffd0 : 0xffe8b0); S3._fl = null;
+    amb.intensity = L.amb; lamp.intensity = L.lamp; S3.lampBase = L.lamp; S3.flick = !!L.flick; lamp.color.setHex(L.flick ? 0xd8ffc0 : 0xffd59a); if (bulbMat) bulbMat.color.setHex(L.flick ? 0xe8ffd0 : 0xffe8b0); S3._fl = null; S3._nextFl = performance.now() + flickWait();
     if (vigEl) vigEl.style.background = `radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0) 35%, ${L.vig} 100%)`;
   };
 
@@ -203,10 +216,14 @@
     if (S3.lite && now - last < 32) return; last = now;
     for (let i = anims.length - 1; i >= 0; i--) { const a = anims[i], t = Math.min(1, (now - a.t0) / a.ms); a.fn(t); if (t >= 1) { anims.splice(i, 1); a.res(); } }
     tt += .016;
-    // ハード：電球がときどきチカチカする
+    // ハード：ときどき 部屋全体（背景・机・立ち絵）が チカチカする（平均 40秒に1回）
     if (S3.flick && !S3.lite) {
-      if (!S3._fl && Math.random() < .006) S3._fl = { t0: now, ms: 250 + Math.random() * 450 };
-      if (S3._fl) { const f = S3._fl, p = (now - f.t0) / f.ms; lamp.intensity = S3.lampBase * (p >= 1 ? 1 : Math.random() < .5 ? .08 : .6 + Math.random() * .5); bulbMat.color.setHex(lamp.intensity < .3 ? 0x333322 : 0xe8ffd0); if (p >= 1) S3._fl = null; }
+      if (!S3._fl && now > (S3._nextFl || 0)) S3._fl = { t0: now, ms: 300 + Math.random() * 500, k: 1, last: 0 };
+      if (S3._fl) {
+        const f = S3._fl, p = (now - f.t0) / f.ms;
+        if (p >= 1) { setBright(1); S3._fl = null; S3._nextFl = now + flickWait(); }
+        else if (now - f.last > 45) { f.last = now; setBright(Math.random() < .5 ? .12 + Math.random() * .1 : .75 + Math.random() * .35); }
+      }
     }
     // 立ち絵は ゆっくり上下に ふわっと浮く
     dealer.position.y = dealer.userData.y0 + (dealer.userData.yy || 0) + Math.sin(tt * 1.1) * .035 + (S3.story ? S3.storyY : 0);

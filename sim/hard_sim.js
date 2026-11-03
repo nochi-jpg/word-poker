@@ -60,7 +60,7 @@ function playRun(grade, hard, acc) {
     let cleared = false, tries = 0;
     while (!cleared && tries < 40) {
       tries++;
-      const m = { pile: KP.shuffle(deck.slice()), disc: [], hand: [] }; KP.refill(grade, m);
+      const m = { pile: KP.shuffle(deck.slice()), disc: [], hand: [], size: hard && g.hardHand ? g.hardHand : g.hand }; KP.refill(grade, m);
       let win = 0, lose = 0, guard = 0;
       while (win < 2 && lose < 2 && guard++ < 60) {
         st.rounds++;

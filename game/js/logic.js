@@ -85,7 +85,7 @@
   // ---- 山札と手札 ----
   // m = {pile:[w], disc:[w], hand:[w]}
   KP.draw = function (grade, m) {
-    const n = KP.GRADES[grade].hand;
+    const n = m.size || KP.GRADES[grade].hand; // m.size：ハードで手札の数が ちがうとき
     while (m.hand.length < n) {
       if (!m.pile.length) { if (!m.disc.length) break; m.pile = KP.shuffle(m.disc); m.disc = []; }
       m.hand.push(m.pile.pop());

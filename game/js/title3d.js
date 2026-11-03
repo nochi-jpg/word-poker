@@ -31,7 +31,7 @@
 
   T.init = function (canvas) {
     renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-    renderer.setClearColor(0x000000, 0);
+    renderer.setClearColor(0x000000, 0); renderer.autoClear = false;
     scene = new THREE.Scene();
     cam = new THREE.PerspectiveCamera(40, 1366 / 768, .1, 50); cam.position.set(0, 0, 10); cam.lookAt(0, 0, 0);
     back = new THREE.MeshBasicMaterial({ map: backTex() });
@@ -49,15 +49,26 @@
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5)); renderer.setSize(1366 * s, 768 * s, false);
   };
   const px = (x, y) => [(x - 683) / U, (384 - y) / U];
+  // カードどうしが ふれないように：出す場所は ほかのカードから はなれたところだけ
+  const GAP = 2.7; // カードが回っても ぶつからない きょり（カードの対角線より すこし広い）
+  const XMIN = (480 - 683) / U, XMAX = (1340 - 683) / U;
+  function freeSpot(y) {
+    for (let k = 0; k < 30; k++) {
+      const x = XMIN + Math.random() * (XMAX - XMIN);
+      if (cards.every(c => Math.hypot(c.position.x - x, c.position.y - y) > GAP)) return x;
+    }
+    return null;
+  }
   function spawn(top) {
+    const y = top ? (384 + 160) / U : (384 - Math.random() * 600) / U, x = freeSpot(y);
+    if (x === null) return false;
     const i = Math.floor(Math.random() * IDS.length), side = new THREE.MeshBasicMaterial({ color: 0x111111 });
     const m = new THREE.Mesh(new THREE.BoxGeometry(1.45, 2.04, .03), [side, side, side, side, faces[i], back]);
-    const [x, y] = px(480 + Math.random() * 860, top ? -160 : Math.random() * 600);
-    m.position.set(x, y, -1.5 + Math.random() * 3);
+    m.position.set(x, y, -1 + Math.random() * 2);
     m.rotation.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
     const ax = new THREE.Vector3(Math.random() - .5, Math.random() - .5, Math.random() - .5).normalize();
-    m.userData = { ax, w: .5 + Math.random() * 1.1, vy: .45 + Math.random() * .4, sway: Math.random() * 6, sa: .15 + Math.random() * .35, x0: x };
-    scene.add(m); cards.push(m);
+    m.userData = { ax, w: .5 + Math.random() * 1.1, vy: .5 + Math.random() * .12, sway: Math.random() * 6, sa: .1 + Math.random() * .2, x0: x };
+    scene.add(m); cards.push(m); return true;
   }
   function loop(now) {
     if (!running) return;
@@ -70,7 +81,22 @@
       m.rotateOnAxis(u.ax, u.w * dt);
       if (m.position.y < -384 / U - 1.6) { scene.remove(m); m.geometry.dispose(); cards.splice(k, 1); }
     }
-    renderer.render(scene, cam);
+    // 近づきすぎたら、そっと おしあって はなす
+    for (let a = 0; a < cards.length; a++) for (let b = a + 1; b < cards.length; b++) {
+      const A = cards[a], B = cards[b], dx = B.position.x - A.position.x, dy = B.position.y - A.position.y, d = Math.hypot(dx, dy);
+      if (d < GAP && d > 0) {
+        const push = (GAP - d) * .5 * Math.min(1, dt * 4), ux = dx / d, uy = dy / d;
+        A.userData.x0 -= ux * push; B.userData.x0 += ux * push;
+        A.position.y -= uy * push * .5; B.position.y += uy * push * .5;
+        A.userData.x0 = Math.min(XMAX, Math.max(XMIN, A.userData.x0)); B.userData.x0 = Math.min(XMAX, Math.max(XMIN, B.userData.x0));
+      }
+    }
+    // 1まいずつ 奥から順に かく（重なっても 透けたり めりこんだり しない）
+    renderer.clear();
+    const order = cards.slice().sort((p, q) => p.position.z - q.position.z);
+    cards.forEach(c => c.visible = false);
+    for (const c of order) { c.visible = true; renderer.clearDepth(); renderer.render(scene, cam); c.visible = false; }
+    cards.forEach(c => c.visible = true);
   }
   T.start = function () {
     if (KP.S3.lite || running) return;
@@ -79,5 +105,6 @@
     if (!cards.length) for (let k = 0; k < 4; k++) spawn(false);
     raf = requestAnimationFrame(loop);
   };
+  T._cards = () => cards; T._GAP = GAP;
   T.stop = function () { running = false; cancelAnimationFrame(raf); };
 })(window.KP);

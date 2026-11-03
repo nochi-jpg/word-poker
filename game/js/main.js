@@ -16,7 +16,7 @@
       (g.burst ? `へんな文は <span class="em">バースト（0点）</span>。長い文ほど 気をつけて！<br>` : `へんな文は まい数と 同じ点数。2語の正しい文（4点）と 4語のへんな文（4点）は 同点です。<br>`) +
       `同点のときは、文が正しい ほうの 勝ち。勝ち負けの 理由は かならず 表示されます。`;
     const p3 = `あいて {4人|よにん}に、それぞれ <span class="em">{2本|にほん}先取</span>で 勝てば クリア！<br>
-      手札は ${g.hand}まい。使った分だけ 引きます（使わなかった カードは 次も 使えます）。<br>
+      手札は ${g.hand}まい（${grade === "低学年" ? "ハードは 6まい" : "ハードも 同じ"}）。使った分だけ 引きます（使わなかった カードは 次も 使えます）。<br>
       入れかえ：${g.swaps === Infinity ? "何回でも" : `全部で ${g.swaps}回`}（何まい かえても 1回）。<br>` +
       (g.shop ? `あいてに 勝つと お店へ。カードを 買うか、入れかえを ${g.shopSwap}回 ふやせます。<br>` : "") +
       `負けたら、その あいてから やり直し。ノーコンティニューで クリアすると、つぎの 学年が 遊べます。`;
@@ -139,7 +139,7 @@
       const G = KP.GRADES[g], open = hardView ? d.hard.includes(g) : d.grades.includes(g), best = (hardView ? d.bestHard : d.best)[g];
       const b = KP.el("button", "gcard si" + (open ? "" : " lock")); b.dataset.box = "";
       b.innerHTML = KP.rb(`<div class="gn">${g}${hardView ? "<small>ハード</small>" : ""}</div>
-        <div class="gr"><span>手札</span><b>${G.hand}まい</b></div>
+        <div class="gr"><span>手札</span><b>${hardView && G.hardHand ? G.hardHand : G.hand}まい</b></div>
         <div class="gr"><span>入れかえ</span><b>${G.swaps === Infinity ? "何回でも" : G.swaps + "回"}</b></div>
         <div class="gr"><span>${hardView ? "あいて" : "文の長さ"}</span><b>${hardView ? (g === "高学年" ? "{5人|ごにん}" : "{4人|よにん}") + "・強い" : G.adj ? "上限なし" : "4語まで"}</b></div>
         <div class="gr"><span>お店</span><b>${G.shop ? "あり" : "なし"}</b></div>
