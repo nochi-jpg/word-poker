@@ -23,6 +23,10 @@
     return [p1, p2, p3];
   }
   KP.howto = grade => KP.popup(`あそびかた　${grade}`, howtoPages(grade));
+  const HARD_RULE = `<span class="em">1手 30秒</span>の タイマーが あります。上の 赤い ゲージが 0に なると ゲームオーバー！<br>
+    入れかえ中も 時間は へります。文を 決定すると、30秒に もどります。<br>
+    あいてに 負けると ゲームオーバー。<span class="em">コンティニューは できません。</span><br>
+    「デッキ」「中断」を おしている あいだは 止まります（画面は まっくらに なります）。中断して もどると 15秒から はじまります。`;
 
   // ---- タイトル（右側に カードが降ってくる） ----
   let introT = null;
@@ -38,6 +42,7 @@
     async play() {
       const d = D();
       if (!d.ep1) { await KP.playStory(1); d.ep1 = true; save(); return gradeSelect(); }
+      if (d.run && d.run.phase === "over") { d.run = null; save(); } // ハードの ゲームオーバーの とちゅうで とじた
       if (d.run) {
         const r = d.run, label = r.phase === "shop" ? `ショップ` : r.hard && r.d >= 4 ? "ステージ？" : `ステージ${Math.min(r.d + 1, 5)}`;
         const i = await KP.popup("プレイ", [`中断した データが あります。<br><span class="em">${r.grade}${r.hard ? "ハード" : ""}　${label}</span>`], { buttons: ["前回のつづき", "学年選択から"] });
@@ -62,7 +67,7 @@
         KP.EP_LIST.forEach(n => {
           const b = KP.el("button", "epb" + (ok(n) ? "" : " lock") + (n === 5 ? " omake" : ""));
           b.dataset.box = ""; b.disabled = !ok(n);
-          b.innerHTML = `<span class="epn">${KP.rb(n === 5 ? "おまけ" : `第{${n}話|${["", "いちわ", "にわ", "さんわ", "よんわ"][n]}}`)}</span><span class="ept"><span>${ok(n) ? KP.rb(KP.EP_TITLES[n].replace(/^第\d話/, "")) : "？？？"}</span></span>`;
+          b.innerHTML = `<span class="epn">${KP.rb(n === 5 ? "おまけ" : `第{${n}話|${["", "いちわ", "にわ", "さんわ", "よんわ"][n]}}`)}</span><span class="ept"><span>${ok(n) ? KP.rb(KP.EP_TITLES[n].replace(/^第\d話/, "").replace(/ /g, "<br>")) : "？？？"}</span></span>`;
           b.onclick = async () => { $("pop").classList.remove("on"); KP.screen(null); await KP.playStory(n); KP.toTitle(); };
           box.appendChild(b);
         });
@@ -141,12 +146,13 @@
       b.innerHTML = KP.rb(`<div class="gn">${g}${hardView ? "<small>ハード</small>" : ""}</div>
         <div class="gr"><span>手札</span><b>${hardView && G.hardHand ? G.hardHand : G.hand}まい</b></div>
         <div class="gr"><span>入れかえ</span><b>${G.swaps === Infinity ? "何回でも" : G.swaps + "回"}</b></div>
-        <div class="gr"><span>${hardView ? "あいて" : "文の長さ"}</span><b>${hardView ? (g === "高学年" ? "{5人|ごにん}" : "{4人|よにん}") + "・強い" : G.adj ? "上限なし" : "4語まで"}</b></div>
+        <div class="gr"><span>${hardView ? "時間" : "文の長さ"}</span><b>${hardView ? "1手 30秒" : G.adj ? "上限なし" : "4語まで"}</b></div>
         <div class="gr"><span>お店</span><b>${G.shop ? "あり" : "なし"}</b></div>
         <div class="gb">${open ? (best ? `さいこう ランク ${best.rank}` : "まだ クリアしていない") : "まだ えらべない"}</div>` +
         (open ? "" : `<div class="glock"><p>${hardView ? (i ? KP.GRADE_LIST[i - 1] + "ハード" : "高学年") : KP.GRADE_LIST[i - 1]}を<br>ノーコンティニューで<br>クリアすると 遊べます</p></div>`));
       if (open) b.onclick = async () => {
         if (!d.howto[g]) { await KP.howto(g); d.howto[g] = true; save(); }
+        if (hardView && !d.howtoHard) { await KP.popup("ハードモードの ルール", [HARD_RULE]); d.howtoHard = true; save(); }
         KP.startRun(g, hardView);
       };
       box.appendChild(b);

@@ -46,9 +46,11 @@
         await KP.fade(() => { setScene(); KP.screen("battle"); KP.bgm(bgmOf(r)); }, 500, 300);
         newMatch(); r.phase = "match"; save();
       } else if (r.phase === "match") {
-        if (!$("battle").classList.contains("on")) { setScene(); KP.screen("battle"); KP.bgm(bgmOf(r)); }
+        if (!$("battle").classList.contains("on")) { setScene(); KP.screen("battle"); KP.bgm(bgmOf(r)); resumed = true; } // 中断から もどった
+        $("battle").classList.remove("shopping");
         const res = await playMatch();
         if (res === "pause") return KP.toTitle();
+        if (res === "over") return gameOver();
         if (res === "win") {
           r.score[r.d] = r.tries[r.d] > 1 ? 10 : (r.m.lose ? 20 : 30);
           const last = r.d >= nStage(r) - 1, shopNext = G().shop && !last && !(r.hard && r.d === 3);
@@ -60,6 +62,8 @@
         const i = await KP.choose(dealerOf(r).name, "負けてしまった……。この あいてと、もう一度 勝負する？", ["コンティニュー", "やめる"]);
         if (i === 0) { r.continued = true; r.tries[r.d]++; r.phase = "retry"; save(); }
         else { D().run = null; save(); return KP.toTitle(); }
+      } else if (r.phase === "over") {
+        return gameOver();
       } else if (r.phase === "shop") {
         await shop(); r.phase = "intro"; r.offer = null; save();
       } else if (r.phase === "clear") {
@@ -67,6 +71,37 @@
       }
     }
   };
+
+  // ---- ハードのタイマー：1手30秒。0になると ゲームオーバー ----
+  let resumed = false;
+  const T = { left: KP.TIMER, run: false, last: 0, raf: 0, onEnd: null, tick: -1 };
+  function drawTimer() {
+    const f = Math.max(0, T.left / KP.TIMER), n = Math.ceil(Math.max(0, T.left));
+    $("tFill").style.width = (f * 100) + "%"; $("tNum").textContent = n;
+    $("tGauge").classList.toggle("low", T.left <= 10);
+    if (T.run && n <= 5 && n !== T.tick && n > 0) { T.tick = n; KP.se("cursor", 1.6); }
+  }
+  function timerLoop(now) {
+    if (!T.run) return;
+    T.left -= (now - T.last) / 1000; T.last = now; drawTimer();
+    if (T.left <= 0) { T.run = false; T.left = 0; drawTimer(); const e = T.onEnd; T.onEnd = null; e && e(); return; }
+    T.raf = requestAnimationFrame(timerLoop);
+  }
+  function timerStart(sec, onEnd) { T.left = sec; T.onEnd = onEnd; T.tick = -1; T.run = true; T.last = performance.now(); drawTimer(); cancelAnimationFrame(T.raf); T.raf = requestAnimationFrame(timerLoop); }
+  function timerPause() { T.run = false; cancelAnimationFrame(T.raf); }
+  function timerResume() { if (T.run || !T.onEnd || T.left <= 0) return; T.run = true; T.last = performance.now(); T.raf = requestAnimationFrame(timerLoop); }
+  function timerStop() { T.run = false; T.onEnd = null; cancelAnimationFrame(T.raf); }
+  KP.timerState = () => ({ left: T.left, run: T.run }); // 自動チェック用
+  KP.timerSet = s => { T.left = s; };
+
+  // ---- ゲームオーバー（ハード：コンティニューなし） ----
+  async function gameOver() {
+    const r = R(); timerStop();
+    D().run = null; save();
+    $("sel").classList.add("off"); $("battle").classList.remove("swapping");
+    await KP.popup("ゲームオーバー", [`<div class="big-note">ゲームオーバー</div>${r && r.over === "time" ? "時間切れです。" : "あいてに 負けてしまった……。"}ハードは コンティニューできません。<br>もう一度 ちょうせんしよう！`]);
+    KP.toTitle();
+  }
 
   // ---- 上の表示 ----
   function hudUpdate() {
@@ -201,7 +236,28 @@
     const p = new Promise(res => { endMatch = res; });
     await S3.camTo("sel", 800);
     $("sel").classList.remove("off"); render(); KP.slideIn($("battle"));
+    startTurnTimer();
     return p;
+  }
+  function startTurnTimer() {
+    const r = R(); if (!r.hard) return;
+    timerStart(resumed ? KP.TIMER_RESUME : KP.TIMER, timeUp); resumed = false;
+  }
+  // 時間切れ：その場で 保存してから（やり直し防止）演出
+  async function timeUp() {
+    const r = R(); if (!r || !endMatch) return;
+    busy = true; swapMode = false; hold = null; r.phase = "over"; r.over = "time"; save();
+    $("battle").classList.remove("swapping"); $("sel").classList.add("off");
+    KP.se("ko"); S3.mood("嬉しい"); await S3.camTo("center", 600);
+    await KP.stamp("時間切れ！", "", 1300);
+    await KP.say(dealerOf(r).name, dealerOf(r).win);
+    busy = false; const e = endMatch; endMatch = null; e("over");
+  }
+  // ハードでは「デッキ」「中断」のあいだ タイマーを止め、うしろを まっくらにする（手札を見て考えられないように）
+  async function pausedPopup(fn) {
+    const r = R(); timerPause();
+    $("pop").classList.toggle("black", !!r.hard);
+    try { return await fn(); } finally { $("pop").classList.remove("black"); }
   }
   $("bSwap").onclick = () => {
     if (busy) return;
@@ -211,9 +267,9 @@
   $("bGo").onclick = () => { if (busy) return; swapMode ? doSwap() : decide(); };
   $("hPause").onclick = async () => {
     if (busy || !endMatch) return; busy = true;
-    const i = await KP.popup("中断", ["ここまでの きろくを 保存して、タイトルに もどります。<br>つぎは タイトルの「プレイ」から「前回のつづき」を えらぶと、つづきから 遊べます。"], { buttons: ["中断する", "つづける"] });
+    const i = await pausedPopup(() => KP.popup("中断", ["ここまでの きろくを 保存して、タイトルに もどります。<br>つぎは タイトルの「プレイ」から「前回のつづき」を えらぶと、つづきから 遊べます。" + (R().hard ? "<br>ハードは、もどったとき タイマーが 15秒から はじまります。" : "")], { buttons: ["中断する", "つづける"] }));
     busy = false;
-    if (i === 0) { save(); const e = endMatch; endMatch = null; $("battle").classList.remove("swapping"); e("pause"); } else render();
+    if (i === 0) { timerStop(); save(); const e = endMatch; endMatch = null; $("battle").classList.remove("swapping"); e("pause"); } else { render(); timerResume(); }
   };
 
   function doSwap() {
@@ -241,8 +297,8 @@
     m.hand = m.hand.filter(w => !used.includes(w)); m.disc.push(...used);
     const before = new Set(m.hand); KP.refill(r.grade, m);
     const matchEnd = m.win >= 2 ? "win" : m.lose >= 2 ? "lose" : null;
-    if (matchEnd === "lose") r.phase = "lost"; // 負けた瞬間に保存
-    save();
+    if (matchEnd === "lose") { r.phase = r.hard ? "over" : "lost"; r.over = "lose"; } // 負けた瞬間に保存（ハードは コンティニューなし）
+    timerStop(); save();
     busy = true; hold = null; $("sel").classList.add("off");
     await reveal({ pst, pj, ps, dl, ds, res, reason });
     sel = { s: null, ms: [], p: null, adj: [] };
@@ -250,11 +306,11 @@
       const d = dealerOf(r); KP.se("ko");
       if (matchEnd === "win") { S3.mood("悔しい"); await KP.stamp("勝利！", "red", 1200); await KP.say(d.name, d.lose); }
       else { S3.mood("嬉しい"); await KP.stamp("敗北……", "", 1200); await KP.say(d.name, d.win); }
-      busy = false; const e = endMatch; endMatch = null; return e(matchEnd);
+      busy = false; const e = endMatch; endMatch = null; return e(matchEnd === "lose" && r.hard ? "over" : matchEnd);
     }
     fresh = m.hand.filter(w => !before.has(w));
     await S3.camTo("sel", 800);
-    busy = false; $("sel").classList.remove("off"); render();
+    busy = false; $("sel").classList.remove("off"); render(); startTurnTimer();
   }
 
   async function reveal({ pst, pj, ps, dl, ds, res, reason }) {
@@ -305,7 +361,7 @@
       if (!dl.ok) why.push(`あいての文：${dl.why[0]}。`);
       band.querySelector(".jtx").innerHTML = `<span>${KP.rb(why.join("　") + reason)}</span>`;
       $("jBurst").classList.remove("on"); band.classList.remove("on");
-      J.classList.add("on"); J.querySelectorAll(".jc .wd").forEach(e => KP.refit(e, 10)); KP.refit(band.querySelector(".jtx"), 13);
+      $("battle").classList.add("judging"); J.classList.add("on"); J.querySelectorAll(".jc .wd").forEach(e => KP.refit(e, 10)); KP.refit(band.querySelector(".jtx"), 13);
       let skip = false; J.onclick = () => { skip = true; };
       const w = ms => skip ? Promise.resolve() : KP.wait(ms);
       const bang = (e, s = "bang") => { e.classList.add("on"); if (!skip) KP.se(s); };
@@ -320,7 +376,7 @@
       // クリックで つぎへ
       J.classList.add("wait"); skip = false;
       await new Promise(r2 => { J.onclick = r2; });
-      J.onclick = null; J.classList.remove("on", "wait"); done();
+      J.onclick = null; J.classList.remove("on", "wait"); $("battle").classList.remove("judging"); done();
     });
   }
 
@@ -347,7 +403,7 @@
     void extra;
     return KP.popup("いまのデッキ", pages, { minH: 400 });
   };
-  $("hDeck").onclick = async () => { if (busy || !endMatch) return; busy = true; await KP.showDeck(); busy = false; render(); };
+  $("hDeck").onclick = async () => { if (busy || !endMatch) return; busy = true; await pausedPopup(() => KP.showDeck()); busy = false; render(); timerResume(); };
   $("spDeck").onclick = () => KP.showDeck();
 
   // ---- 自動チェック用：手札からいちばん点の高い文を、実際の操作で作る ----
@@ -371,7 +427,7 @@
     const r = R(), sh = KP.SHOP, g = G();
     $("sel").classList.add("off");
     await KP.fade(() => {
-      KP.screen("battle", { slide: false }); hudUpdate(); KP.bgm("story");
+      KP.screen("battle", { slide: false }); hudUpdate(); KP.bgm("story"); $("battle").classList.add("shopping");
       S3.visible = true; S3.storyMode(false); S3.showTable(true); S3.setDealer("shop"); S3.showDealer(true); S3.light(r.hard ? 5 : Math.max(0, r.d - 1), $("vig")); S3.camTo("center", 0);
     }, 600, 500, "ショップ");
     await KP.cutin(sh);

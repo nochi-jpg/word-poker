@@ -434,3 +434,15 @@ rt{font-family:"KPMaru",sans-serif;font-weight:900;font-size:.42em;line-height:1
 #jBand .jtx{line-height:1.5!important;height:58px!important;display:flex;align-items:center;padding-top:9px}
 /* ハードのチカチカ：暗い瞬間は 画面全体を すこし暗く */
 #stage.flickDark #vig{background:rgba(0,0,0,.55)!important}
+/* ---- ハードのタイマー（ステージ1/4の下から 中断の下まで） ---- */
+#tGauge{position:absolute;left:24px;top:84px;width:1318px;height:28px;background:#0a0a0a;border:3px solid #d7141f;transform:skewX(-14deg);box-shadow:5px 5px 0 rgba(0,0,0,.5);display:none;overflow:hidden}
+#battle.hard #tGauge{display:block}
+#battle.hard.shopping #tGauge{display:none}
+#tFill{position:absolute;left:0;top:0;bottom:0;width:100%;background:repeating-linear-gradient(-45deg,#d7141f 0 14px,#b00d17 14px 28px)}
+#tNum{position:absolute;left:10px;top:0;height:22px;line-height:22px;width:44px;text-align:center;font-family:"KPDela",sans-serif;font-weight:400;font-size:18px;color:#fff;background:#0a0a0a;transform:skewX(14deg)}
+#tGauge.low #tFill{animation:tlow .5s steps(2) infinite}
+@keyframes tlow{50%{filter:brightness(1.6)}}
+#battle.hard #swapFx .sbar{top:122px}
+#pop.black{background:#000}
+#battle.judging #tGauge{visibility:hidden}
+.epb .ept{white-space:nowrap;line-height:1.8}
