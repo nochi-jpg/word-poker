@@ -63,6 +63,8 @@ def canva_sounds(tmp):
 def main():
     canva = "--canva" in sys.argv
     html = (GAME / "index.html").read_text(encoding="utf-8")
+    # <!--gh-->〜<!--/gh--> は GitHub版だけのもの（スマホの全画面・ホーム画面アイコン）。1ファイル版には入れない
+    html = re.sub(r"<!--gh-->.*?<!--/gh-->\n?", "", html, flags=re.S)
     css = (GAME / "css" / "style.css").read_text(encoding="utf-8")
     css = re.sub(r"url\(\.\./fonts/([\w.]+)\)", lambda m: f"url({data_uri(GAME / 'fonts' / m.group(1))})", css)
     html = html.replace('<link rel="stylesheet" href="css/style.css">', f"<style>\n{css}\n</style>")

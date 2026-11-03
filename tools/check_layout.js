@@ -65,7 +65,8 @@ function inspect() {
   const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
   let fail = 0;
   for (const vp of [{ width: 1366, height: 768 }, { width: 915, height: 412 }]) {
-    const page = await browser.newPage({ viewport: vp });
+    // スマホ横は 本物のスマホと同じ扱い（タッチ・ページの縮小あり）で開く
+    const page = await browser.newPage(vp.width < 1000 ? { viewport: vp, isMobile: true, hasTouch: true, deviceScaleFactor: 2, userAgent: 'Mozilla/5.0 (Linux; Android 14; SM-F956B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36' } : { viewport: vp });
     const logs = []; page.on('pageerror', e => logs.push('JSエラー: ' + e.message)); page.on('console', m => m.type() === 'error' && logs.push('console: ' + m.text()));
     await page.addInitScript(lite => { if (lite) localStorage.setItem('kotobapoker_v1', JSON.stringify({ opt: { vol: 0, lite: true } })); else localStorage.setItem('kotobapoker_v1', JSON.stringify({ opt: { vol: 0, lite: false } })); }, !!playGrade);
     await page.goto(url);
