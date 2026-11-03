@@ -135,7 +135,8 @@
   // ---- 学年選択（ハードは「もどる」の右のボタンで切りかえ。背景が黒になる） ----
   let hardView = false;
   function gradeSelect(keepView) {
-    const d = D(); if (!keepView) hardView = false;
+    // 一度ハードを えらんだら、つぎも ハードの画面から（「ノーマル」を おすと もどる）
+    const d = D(); if (!keepView) hardView = !!d.lastHard && d.hard.length > 0;
     KP.S3.visible = false; KP.bgm("title");
     const scr = $("scr-grade"); scr.classList.toggle("hardmode", hardView);
     KP.setRb($("gTitle"), hardView ? "ハード　学年を えらぶ" : "学年を えらぶ");
@@ -153,7 +154,7 @@
       if (open) b.onclick = async () => {
         if (!d.howto[g]) { await KP.howto(g); d.howto[g] = true; save(); }
         if (hardView && !d.howtoHard) { await KP.popup("ハードモードの ルール", [HARD_RULE]); d.howtoHard = true; save(); }
-        KP.startRun(g, hardView);
+        d.lastHard = hardView; save(); KP.startRun(g, hardView);
       };
       box.appendChild(b);
     });
@@ -176,7 +177,7 @@
     }
   }
   $("gBack").onclick = () => KP.toTitle();
-  $("gHard").onclick = () => { hardView = !hardView; $("spot").classList.remove("on"); $("gHard").classList.remove("lit"); gradeSelect(true); };
+  $("gHard").onclick = () => { hardView = !hardView; D().lastHard = hardView; save(); $("spot").classList.remove("on"); $("gHard").classList.remove("lit"); gradeSelect(true); };
 
   // ---- 起動 ----
   async function boot() {
