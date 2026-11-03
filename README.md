@@ -21,7 +21,7 @@ https://claude.ai/artifact/Mn3KAQ54vxpKrTKtc4xGP3
 | 場所 | 中身 |
 | --- | --- |
 | `game/` | **本番**のソース（index.html・css・js・素材・three.js・フォント） |
-| `dist/kotoba-poker.html` | **本番**の配布用ファイル。three.js・フォント・画像をすべて埋め込んだ1ファイル。ダブルクリックで動く |
+| `dist/kotoba-poker-canva.html` | Canvaのホームページで配る1ファイル版（10MB以内。`python tools/build.py --canva` で作る。BGMは Opus 48kbps の60秒ループ） |
 | `tools/build.py` | `game/` から `dist/kotoba-poker.html` を作る |
 | `tools/make_fonts.py` | ゲームで使う文字だけのフォント（woff2）を作る。文章やカードを変えたら実行 |
 | `tools/check_layout.js` | 自動チェック（かぶり・はみだし・ふりがなのはみだし・画面外のボタン、通しプレイ） |

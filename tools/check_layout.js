@@ -74,7 +74,7 @@ function inspect() {
     const tap = sel => page.evaluate(sel => { const e = document.querySelector(sel); if (e) e.click(); }, sel);
     const check = async label => {
       await page.waitForTimeout(playGrade ? 150 : 900); // スライドインが終わるのを待つ
-      await page.waitForFunction(() => !document.querySelector('.hcard.new,.si.sin'), null, { timeout: 5000 }).catch(() => { });
+      await page.waitForFunction(() => !document.querySelector('.hcard.new,.si.sin,.brow.sin'), null, { timeout: 5000 }).catch(() => { });
       const errs = await page.evaluate(inspect);
       const fit = await page.evaluate(() => { const r = document.getElementById('stage').getBoundingClientRect(); return r.left >= -1 && r.top >= -1 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1; });
       if (!fit) errs.push('舞台が画面に収まっていない');
