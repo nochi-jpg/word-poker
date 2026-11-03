@@ -2,6 +2,13 @@
 (function (KP) {
   const $ = KP.$ = id => document.getElementById(id);
   KP.wait = ms => new Promise(r => setTimeout(r, KP.S3 && KP.S3.lite ? Math.min(ms, 200) : ms));
+  // 画面の表示を すべてリセット（クレジットなど）
+  KP.resetView = function () {
+    KP.S3.blank(); KP.screen(null); KP.hideMsg();
+    ["bg2d", "chara2d"].forEach(id => { const e = $(id); e.style.display = "none"; e.src = KP.BLANK; e.classList.remove("on"); });
+    ["cutin", "judge", "stamp", "pop"].forEach(id => $(id).classList.remove("on"));
+    $("vig").style.background = ""; KP.S3._cur = null;
+  };
   KP.BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
   KP.loadImg = p => new Promise(r => { const i = new Image(); i.onload = i.onerror = () => r(); i.src = KP.asset(p); });
   KP.el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };

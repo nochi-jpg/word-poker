@@ -93,6 +93,8 @@
   };
   S3.mood = m => { const t = moods[m] || moods.基本; if (!t) return; dealer.material.map = t; dealer.material.needsUpdate = true; };
   S3.showTable = v => { table.visible = v; };
+  // 3Dの画面を まっさらにする（前の場面の絵が のこらないように）
+  S3.blank = () => { S3.visible = false; S3.clear(); dealer.visible = false; S3.storyMode(false); renderer.clear(); };
   S3.showDealer = v => { dealer.visible = v; dealer.material.opacity = 1; };
   // 人物の登場・退場：フェードイン／フェードアウト
   S3.fadeDealer = async (show, ms = 350) => {

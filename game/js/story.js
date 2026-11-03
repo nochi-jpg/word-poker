@@ -164,40 +164,36 @@
       ["end", "あそんでくれて ありがとう！"],
     ];
   };
-  KP.staffRoll = function (ending) {
-    return new Promise(async res => {
+  // クレジット：再生した瞬間に うしろの表示を すべてリセット。文字と 小さい立ち絵が いっしょに 下からフェードインして 上へのぼる
+  KP.staffRoll = function () {
+    return new Promise(res => {
       const $ = KP.$, box = $("roll"), inner = $("rollIn"), skip = $("skipBtn");
-      KP.S3.visible = false; KP.screen(null); KP.bgm("credit");
+      KP.resetView(); KP.bgm("credit");
       inner.innerHTML = "";
-      const ppl = [];
       for (const [t, v] of ROLL()) {
         if (t === "p") {
-          const e = KP.el("div", "rp", `<div class="rpn">${KP.rb(v.nick)}</div><div class="rpm">${KP.rb(v.name)}</div>`);
-          inner.appendChild(e); ppl.push([e, v]);
+          const img = v.id === "shop" ? "shop_0" : `${v.id}_3`;
+          inner.appendChild(KP.el("div", "rp", `<img class="rpi" alt="" src="${KP.asset(`assets/chara/${img}.webp`)}"><div class="rpt"><div class="rpn">${KP.rb(v.nick)}</div><div class="rpm">${KP.rb(v.name)}</div></div>`));
         } else inner.appendChild(KP.el("div", "r" + t, KP.rb(v)));
       }
       box.classList.add("on");
-      const sideL = $("rollL"), sideR = $("rollR");
-      let done = false;
-      const fin = () => { if (done) return; done = true; cancelAnimationFrame(raf); box.classList.remove("on"); skip.style.display = "none"; res(); };
+      let done = false, raf;
+      const fin = () => { if (done) return; done = true; cancelAnimationFrame(raf); box.classList.remove("on"); inner.innerHTML = ""; skip.style.display = "none"; res(); };
       skip.style.display = "block";
       skip.onclick = async ev => { ev.stopPropagation(); if (await askSkip()) fin(); };
-      const H = inner.scrollHeight, total = H + 768, speed = KP.S3.lite ? 220 : 70; // px/秒
-      const t0 = performance.now(); let raf, shown = -1;
+      const items = [...inner.children], H = inner.scrollHeight, speed = KP.S3.lite ? 220 : 70; // px/秒
+      const t0 = performance.now();
       const step = now => {
         const y = 768 - (now - t0) / 1000 * speed; inner.style.transform = `translateY(${y}px)`;
-        // いま画面のまん中あたりにいる登場人物の立ち絵を左右に出す
-        let cur = -1; ppl.forEach(([e], i) => { const top = y + e.offsetTop; if (top < 520 && top > 120) cur = i; });
-        if (cur !== shown && cur >= 0) {
-          shown = cur; const [, d] = ppl[cur], side = cur % 2 ? sideR : sideL, other = cur % 2 ? sideL : sideR;
-          side.src = KP.asset(d.id === "shop" ? "assets/chara/shop_0.webp" : `assets/chara/${d.id}_3.webp`);
-          side.classList.remove("on"); void side.offsetWidth; side.classList.add("on"); other.classList.remove("on");
+        // 下から入ってくるときは フェードイン、上で 消えるときは フェードアウト
+        for (const e of items) {
+          const top = y + e.offsetTop, bot = top + e.offsetHeight;
+          e.style.opacity = Math.max(0, Math.min(1, (768 - top) / 160, bot / 120));
         }
-        if (y < -H) { setTimeout(fin, 1800); return; }
+        if (y < -H) { setTimeout(fin, 1500); return; }
         raf = requestAnimationFrame(step);
       };
       raf = requestAnimationFrame(step);
-      void total; void ending;
     });
   };
 })(window.KP);

@@ -114,6 +114,37 @@
   };
   document.querySelectorAll("#menu .mb").forEach(b => b.onclick = () => ACT[b.dataset.act]());
 
+  // ---- デバッグ：タイトルの「作：K.nom」を 20回 クリック（タップ）すると、好きなステージの 対戦直前へ とべる（演出チェック用。デッキは初期デッキ） ----
+  let signN = 0, signT = 0;
+  $("sign").addEventListener("pointerdown", () => {
+    const now = performance.now(); if (now - signT > 4000) signN = 0; signT = now;
+    if (++signN < 20) return; signN = 0; KP.se("good"); jumpMenu();
+  });
+  function jumpMenu() {
+    const modes = KP.GRADE_LIST.flatMap(g => [[g, false], [g, true]]);
+    const page = body => {
+      body.innerHTML = `<div class="dbgnote">${KP.rb("とびたい ステージを えらんでください（デッキは 初期デッキ）")}</div><div class="dbg"></div>`;
+      const box = body.querySelector(".dbg");
+      for (const [g, hard] of modes) {
+        const n = (hard ? KP.GRADES[g].hard : KP.GRADES[g].dealer).length;
+        const row = KP.el("div", "dbgrow", `<span class="dbk">${KP.rb(g + (hard ? "ハード" : ""))}</span>`);
+        for (let d = 0; d < n; d++) {
+          const b = KP.el("button", "pbtn sm", d === 4 ? "？" : String(d + 1)); b.dataset.box = "";
+          b.onclick = () => { $("pop").classList.remove("on"); debugStart(g, hard, d); };
+          row.appendChild(b);
+        }
+        box.appendChild(row);
+      }
+    };
+    KP.popup("デバッグ：ステージへ ジャンプ", [page], { buttons: ["とじる"], minH: 380 });
+  }
+  function debugStart(grade, hard, d) {
+    const g = KP.GRADES[grade], n = (hard ? g.hard : g.dealer).length;
+    D().run = { grade, hard, d, phase: "intro", deck: KP.newDeck(grade), swaps: g.swaps === Infinity ? null : g.swaps,
+      tries: Array(n).fill(1), score: Array(n).fill(0), continued: false, m: null, offer: null, debug: true };
+    save(); KP.runLoop();
+  }
+
   // ---- デバッグモード：ハイスコアを ひらいて、左上の「ハ」を 20回 クリック（タップ）すると すべて解禁 ----
   function debugTap() {
     const t = $("popTitle"); let n = 0;
