@@ -190,7 +190,8 @@
       box.appendChild(b);
     });
     const hb = $("gHard"); hb.style.display = d.hard.length ? "block" : "none"; KP.setRb(hb, hardView ? "ノーマル" : "ハード");
-    KP.screen("scr-grade");
+    // ノーマル／ハードの切りかえのときは、ボタンは そのまま（消えて もどる動きを させない）。学年のカードだけ 入れかえる
+    if (keepView) { KP.screen("scr-grade", { slide: false }); KP.slideIn(box); } else KP.screen("scr-grade");
     // 新しく 遊べるようになった学年を 3秒だけ 明るくする（中学年・高学年）
     if (d.gradeNew && !hardView) {
       const i = KP.GRADE_LIST.indexOf(d.gradeNew), card = box.children[i]; d.gradeNew = null; save();
