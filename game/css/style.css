@@ -446,3 +446,6 @@ rt{font-family:"KPMaru",sans-serif;font-weight:900;font-size:.42em;line-height:1
 #pop.black{background:#000}
 #battle.judging #tGauge{visibility:hidden}
 .epb .ept{white-space:nowrap;line-height:1.8}
+.epb .ept{width:100%;justify-content:center;overflow:hidden}
+.epb .ept{font-size:16px}
+.epb{padding:0 2px!important}.epb .ept rt{letter-spacing:-.04em}

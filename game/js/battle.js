@@ -275,7 +275,7 @@
   function doSwap() {
     const r = R(), m = r.m;
     m.hand = m.hand.filter(w => !marks.has(w)); m.disc.push(...marks);
-    const before = new Set(m.hand); KP.draw(r.grade, m); fresh = m.hand.filter(w => !before.has(w));
+    const before = new Set(m.hand); KP.refill(r.grade, m); fresh = m.hand.filter(w => !before.has(w)); // 文が作れない手札には ならないように
     if (r.swaps !== null) r.swaps--;
     swapMode = false; marks.clear(); save(); render();
   }
@@ -418,6 +418,7 @@
       if (v > bv) { bv = v; best = st; }
     }
     sel = { s: null, ms: [], p: null, adj: [] }; hold = null; swapMode = false;
+    if (!best) return -1;
     clickHand(best.s); clickHand(best.p); best.ms.forEach(w => clickHand(w)); best.adj.forEach(([n, a]) => { clickHand(a); clickAdj(n); });
     return bv;
   };
@@ -474,8 +475,10 @@
   async function clear() {
     const r = R(), dat = D(), n = nStage(r), total = r.score.reduce((a, b) => a + b, 0), rank = rankOf(total, n * 30);
     const ppl = r.hard && r.grade === "高学年" ? [...KP.DEALERS[r.grade], KP.MISE] : KP.DEALERS[r.grade];
-    await KP.fade(() => { S3.visible = false; KP.screen("result", { slide: false }); KP.bgm("title"); }, 600, 200);
+    // 暗転が明ける前に「まだ出さない」状態にしておく（ランクの□が 一瞬 見えないように）
     const resEl = $("result"); resEl.classList.add("dealing"); resEl.querySelectorAll(".shown").forEach(e => e.classList.remove("shown"));
+    $("rRank").innerHTML = ""; $("rRows").innerHTML = ""; $("rNote").innerHTML = "";
+    await KP.fade(() => { S3.visible = false; KP.screen("result", { slide: false }); KP.bgm("title"); }, 600, 200);
     KP.setRb($("rTitle"), r.hard ? "ハード クリア！" : "クリア！");
     const rows = $("rRows"); rows.innerHTML = ""; rows.classList.toggle("five", n === 5);
     ppl.forEach((d, i) => {
