@@ -27,6 +27,7 @@
     for (const m of ms) {
       if (!m.any && !p.mods.includes(m.kind) && !(m.okP && m.okP.includes(p.w))) why.push(`「${m.w}」は「${p.w}」を くわしく できない`);
       else if (m.ngP && m.ngP.includes(p.w)) why.push(`「${m.w}」と「${p.w}」は 合わない`);
+      else if (m.ngPT && m.ngPT[p.w] && m.ngPT[p.w].includes(s.tag)) why.push(`「${s.w}」のときは「${m.w} ${p.w}」は 合わない`);
       else if (p.modT && p.modT[m.kind] && !p.modT[m.kind].includes(s.tag)) why.push(`「${s.w}」は「${m.w} ${p.w}」が できない`);
       if (kinds.has(m.kind)) why.push(`同じ しゅるいの 修飾語（${KP.CAT[m.kind]}）が 2つ ある`);
       if (m.cs && cs.has(m.cs)) why.push(`「${m.cs}」が 2つ ある`);
