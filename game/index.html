@@ -9,17 +9,16 @@
 <body>
 <div id="stage">
  <div id="gl"></div><div id="vig"></div>
- <img id="bg2d" alt=""><img id="chara2d" alt="">
+ <img id="bg2d" alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"><img id="chara2d" alt="" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
 
- <!-- タイトル（動く背景・シルエットの相手） -->
+ <!-- タイトル（動く背景・降ってくるカード） -->
  <section id="scr-title" class="scr">
   <div class="tbg" id="bgStripe"></div>
   <div class="ticker" style="top:520px">KOTOBA POKER ことばポーカー KOTOBA POKER ことばポーカー KOTOBA POKER ことばポーカー KOTOBA POKER ことばポーカー </div>
   <div class="ticker b" style="top:640px">SUBJECT PREDICATE MODIFIER SUBJECT PREDICATE MODIFIER SUBJECT PREDICATE MODIFIER SUBJECT PREDICATE MODIFIER </div>
+  <canvas id="tcards"></canvas>
   <div class="tbg" id="bgRed"></div><div class="tbg" id="bgRed2"></div>
   <div id="sweep"></div>
-  <div id="sil"><div class="ln" style="top:200px"></div><div class="ln" style="top:330px"></div><div class="ln" style="top:460px"></div><img id="silImg" alt=""></div>
-  <div id="tflash"></div>
   <img id="logo" alt="ことばポーカー" data-box>
   <div id="menu">
    <button class="mb" data-box data-act="play"><span>プレイ</span></button>
@@ -63,7 +62,7 @@
   <div id="judge">
    <div class="jrow" id="jD"><div class="jwho" data-box>あいて</div><div class="jcards"></div><div class="jcalc"><div class="jf" data-box></div><div class="jp" data-box></div></div></div>
    <div class="jrow" id="jP"><div class="jwho" data-box>あなた</div><div class="jcards"></div><div class="jcalc"><div class="jf" data-box></div><div class="jp" data-box></div></div></div>
-   <div id="jBurst"><div class="jbt" data-box></div><div class="jbs" data-box></div></div>
+   <div id="jBurst"><div class="jbt"></div><div class="jbs"></div></div>
    <div id="jBand" data-box><span class="jtag">判定</span><span class="jtx"></span></div>
   </div>
  </section>
@@ -120,6 +119,7 @@
 <script src="js/save.js"></script>
 <script src="js/sound.js"></script>
 <script src="js/stage3d.js"></script>
+<script src="js/title3d.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/story.js"></script>
 <script src="js/battle.js"></script>

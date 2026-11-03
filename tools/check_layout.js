@@ -102,8 +102,9 @@ function inspect() {
       // 暗転→登場→カットイン→セリフ
       for (let i = 0; i < 150 && !(await page.isVisible('#cutin.on')); i++) { if (await page.isVisible('#msg.on')) await tap('#msg'); await page.waitForTimeout(100); }
       await page.waitForTimeout(900); await check('07_カットイン');
-      await tap('#cutin'); await clickMsg(3);
-      await page.waitForSelector('#sel:not(.off)'); await check('08_カード選び');
+      await tap('#cutin');
+      for (let i = 0; i < 150 && !(await page.isVisible('#sel:not(.off)')); i++) { if (await page.isVisible('#msg.on')) await tap('#msg'); await page.waitForTimeout(100); }
+      await check('08_カード選び');
       // 通しプレイ
       if (playGrade) {
         let guard = 0, shotSel = false, shotShop = false, shotJ = 0, shotCh = false, shotSwap = false, shotEnd = false;
@@ -114,7 +115,7 @@ function inspect() {
               ch: on('#msg.ch'), msg: on('#msg'), shop: on('#shopPick'), res: on('#result'), pop: on('#pop'), cut: on('#cutin'), title: on('#scr-title'),
               judge: !!document.querySelector('#judge.wait'), fade: on('#fade'), roll: on('#roll'), skip: getComputedStyle(document.getElementById('skipBtn')).display !== 'none' };
           });
-          if (st.res && !shotEnd) { await check('20_クリア'); shotEnd = true; await tap('#rOk'); continue; }
+          if (st.res && !shotEnd) { await page.waitForSelector('#rOk.shown', { state: 'attached', timeout: 20000 }); await check('20_クリア'); shotEnd = true; await tap('#rOk'); continue; }
           if (st.title && !st.run && !st.pop) { console.log('タイトルにもどった'); break; }
           if (st.pop) { if (await page.evaluate(() => /解禁|おめでとう/.test(document.getElementById('popTitle').textContent))) await check('21_解禁'); await tap('#popFoot .pbtn.red'); continue; }
           if (st.fade) { await page.waitForTimeout(150); continue; }

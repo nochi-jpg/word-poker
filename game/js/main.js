@@ -24,23 +24,15 @@
   }
   KP.howto = grade => KP.popup(`あそびかた　${grade}`, howtoPages(grade));
 
-  // ---- タイトル（シルエットの相手が10秒ごとに入れかわる） ----
-  const SIL = ["c01", "c02", "c03", "c04", "c05", "c06", "c07", "c08", "c09", "c10", "c11", "c12"];
-  let silTimer = null, silLast = -1;
-  function silNext() {
-    const sil = $("sil"), img = $("silImg"), fl = $("tflash");
-    let i; do { i = Math.floor(Math.random() * SIL.length); } while (i === silLast); silLast = i;
-    img.src = KP.asset(`assets/chara/${SIL[i]}_0.webp`);
-    sil.classList.remove("in"); void sil.offsetWidth; sil.classList.add("in");
-    setTimeout(() => { fl.classList.remove("on"); void fl.offsetWidth; fl.classList.add("on"); }, 450);
-  }
+  // ---- タイトル（右側に カードが降ってくる） ----
+  let introT = null;
   KP.toTitle = function () {
     KP.S3.visible = false; KP.hideMsg(); $("vig").style.background = ""; KP.screen("scr-title", { slide: false });
-    const t = $("scr-title"); t.classList.remove("in"); void t.offsetWidth; t.classList.add("in");
-    if (!KP.S3.lite) KP.se("slide");
-    KP.bgm("title");
-    clearInterval(silTimer); clearTimeout(KP._silT);
-    if (!KP.S3.lite) { KP._silT = setTimeout(silNext, 900); silTimer = setInterval(() => { if (t.classList.contains("on")) silNext(); }, 10000); }
+    const t = $("scr-title"), menu = $("menu"); t.classList.remove("in"); void t.offsetWidth; t.classList.add("in");
+    // ボタンのスライドインは ひらいたときの1回だけ。おわったら アニメーションを はずす（マウスを はなしても 消えないように）
+    clearTimeout(introT);
+    if (!KP.S3.lite) { menu.classList.add("intro"); introT = setTimeout(() => menu.classList.remove("intro"), 1150); KP.se("slide"); }
+    KP.bgm("title"); KP.T3.start();
   };
   const ACT = {
     async play() {
@@ -80,11 +72,19 @@
       return KP.popup("おはなし", [page]);
     },
     best() {
-      const row = (g, b, open, sfx) => `<div class="row"><span class="k">${g}${sfx}</span><span class="v">${b ? `ランク ${b.rank}　${b.score}点` : open ? "まだ クリアしていない" : "まだ 遊べない"}</span></div>`;
-      const pages = [KP.GRADE_LIST.map(g => row(g, D().best[g], D().grades.includes(g), "")).join("") +
-        `<div class="bnote">ランク：S＝満点　A＝83%〜　B＝66%〜　C＝50%〜　D＝それより下（満点は 120点。高学年ハードは 150点）</div>`];
-      if (D().hard.length) pages.push(KP.GRADE_LIST.map(g => row(g, D().bestHard[g], D().hard.includes(g), "ハード")).join(""));
-      return KP.popup("ハイスコア", pages, { closeBtn: false });
+      // 1行ずつ「しゃっ、しゃっ」と出す。点数は 上限も書く（100/120点）
+      const row = (g, b, open, sfx, max) => `<div class="row brow"><span class="k">${g}${sfx}</span><span class="v">${b ? `ランク ${b.rank}　${b.score}/${max}点` : open ? "まだ クリアしていない" : "まだ 遊べない"}</span></div>`;
+      const max = (g, hard) => (hard && g === "高学年" ? 5 : 4) * 30;
+      const deal = body => {
+        const rows = [...body.querySelectorAll(".brow")];
+        rows.forEach((e, i) => { e.style.animationDelay = (i * 260 + 150) + "ms"; e.classList.add("sin"); setTimeout(() => { KP.se("place", 1.1); }, i * 260 + 150); setTimeout(() => e.classList.remove("sin"), i * 260 + 600); });
+      };
+      const pageN = body => { body.innerHTML = KP.rb(KP.GRADE_LIST.map(g => row(g, D().best[g], D().grades.includes(g), "", max(g))).join("") +
+        `<div class="bnote">ランク：S＝満点　A＝83%〜　B＝66%〜　C＝50%〜　D＝それより下</div>`); deal(body); };
+      const pageH = body => { body.innerHTML = KP.rb(KP.GRADE_LIST.map(g => row(g, D().bestHard[g], D().hard.includes(g), "ハード", max(g, true))).join("")); deal(body); };
+      const p = KP.popup("ハイスコア", D().hard.length ? [pageN, pageH] : [pageN], { closeBtn: false, minH: 300 });
+      debugTap();
+      return p;
     },
     opt() {
       const o = D().opt;
@@ -109,6 +109,24 @@
   };
   document.querySelectorAll("#menu .mb").forEach(b => b.onclick = () => ACT[b.dataset.act]());
 
+  // ---- デバッグモード：ハイスコアを ひらいて、左上の「ハ」を 20回 クリック（タップ）すると すべて解禁 ----
+  function debugTap() {
+    const t = $("popTitle"); let n = 0;
+    const wrap = () => { if (!/^ハイスコア/.test(t.textContent) || t.querySelector("#dbgHa")) return; t.innerHTML = t.innerHTML.replace("ハ", '<span id="dbgHa">ハ</span>'); };
+    wrap(); const mo = new MutationObserver(wrap); mo.observe(t, { childList: true });
+    const on = e => {
+      if (!$("pop").classList.contains("on") || !/^ハイスコア/.test(t.textContent)) { t.removeEventListener("pointerdown", on); mo.disconnect(); return; }
+      if (e.target.id !== "dbgHa") return;
+      if (++n < 20) return;
+      t.removeEventListener("pointerdown", on); mo.disconnect();
+      const d = D(); d.ep1 = true; d.grades = KP.GRADE_LIST.slice(); d.hard = KP.GRADE_LIST.slice(); d.eps = KP.EP_LIST.slice(); d.hardHint = true; d.gradeNew = null;
+      KP.GRADE_LIST.forEach(g => d.howto[g] = true); save(); KP.se("good");
+      $("pop").classList.remove("on");
+      KP.popup("デバッグモード", ["すべての 学年・ハード・おはなしを 解禁しました。"]);
+    };
+    t.addEventListener("pointerdown", on);
+  }
+
   // ---- 学年選択（ハードは「もどる」の右のボタンで切りかえ。背景が黒になる） ----
   let hardView = false;
   function gradeSelect(keepView) {
@@ -126,7 +144,7 @@
         <div class="gr"><span>${hardView ? "あいて" : "文の長さ"}</span><b>${hardView ? (g === "高学年" ? "{5人|ごにん}" : "{4人|よにん}") + "・強い" : G.adj ? "上限なし" : "4語まで"}</b></div>
         <div class="gr"><span>お店</span><b>${G.shop ? "あり" : "なし"}</b></div>
         <div class="gb">${open ? (best ? `さいこう ランク ${best.rank}` : "まだ クリアしていない") : "まだ えらべない"}</div>` +
-        (open ? "" : `<div class="glock">${hardView ? (i ? KP.GRADE_LIST[i - 1] + "ハード" : "高学年") : KP.GRADE_LIST[i - 1]}を ノーコンティニューで<br>クリアすると 遊べます</div>`));
+        (open ? "" : `<div class="glock"><p>${hardView ? (i ? KP.GRADE_LIST[i - 1] + "ハード" : "高学年") : KP.GRADE_LIST[i - 1]}を<br>ノーコンティニューで<br>クリアすると 遊べます</p></div>`));
       if (open) b.onclick = async () => {
         if (!d.howto[g]) { await KP.howto(g); d.howto[g] = true; save(); }
         KP.startRun(g, hardView);
@@ -135,10 +153,19 @@
     });
     const hb = $("gHard"); hb.style.display = d.hard.length ? "block" : "none"; KP.setRb(hb, hardView ? "ノーマル" : "ハード");
     KP.screen("scr-grade");
+    // 新しく 遊べるようになった学年を 3秒だけ 明るくする（中学年・高学年）
+    if (d.gradeNew && !hardView) {
+      const i = KP.GRADE_LIST.indexOf(d.gradeNew), card = box.children[i]; d.gradeNew = null; save();
+      if (card) {
+        const sp = $("spot"); sp.style.setProperty("--sx", (103 + i * 400 + 180) + "px"); sp.style.setProperty("--sy", "428px"); sp.classList.add("big");
+        sp.classList.remove("on"); void sp.offsetWidth; sp.classList.add("on"); card.classList.add("lit"); KP.se("good");
+        setTimeout(() => { sp.classList.remove("on", "big"); card.classList.remove("lit"); }, 3000);
+      }
+    }
     // ハードが解禁されて はじめての 学年選択：「ハード」だけ 3秒 明るくする
-    if (d.hard.length && !d.hardHint && !hardView) {
+    else if (d.hard.length && !d.hardHint && !hardView) {
       d.hardHint = true; d.hardNew = false; save();
-      const sp = $("spot"); sp.classList.remove("on"); void sp.offsetWidth; sp.classList.add("on"); hb.classList.add("lit");
+      const sp = $("spot"); sp.style.setProperty("--sx", "400px"); sp.style.setProperty("--sy", "704px"); sp.classList.remove("on"); void sp.offsetWidth; sp.classList.add("on"); hb.classList.add("lit"); KP.se("good");
       setTimeout(() => { sp.classList.remove("on"); hb.classList.remove("lit"); }, 3000);
     }
   }

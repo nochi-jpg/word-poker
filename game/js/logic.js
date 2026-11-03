@@ -27,6 +27,7 @@
     for (const m of ms) {
       if (!m.any && !p.mods.includes(m.kind) && !(m.okP && m.okP.includes(p.w))) why.push(`「${m.w}」は「${p.w}」を くわしく できない`);
       else if (m.ngP && m.ngP.includes(p.w)) why.push(`「${m.w}」と「${p.w}」は 合わない`);
+      else if (p.modT && p.modT[m.kind] && !p.modT[m.kind].includes(s.tag)) why.push(`「${s.w}」は「${m.w} ${p.w}」が できない`);
       if (kinds.has(m.kind)) why.push(`同じ しゅるいの 修飾語（${KP.CAT[m.kind]}）が 2つ ある`);
       if (m.cs && cs.has(m.cs)) why.push(`「${m.cs}」が 2つ ある`);
       for (const o of ms) if (m.ng && m.ng.includes(o.b)) why.push(`「${m.w}」と「${o.w}」は いっしょに 使えない`);
@@ -102,10 +103,11 @@
   KP.newDeck = function (grade) {
     const g = KP.GRADES[grade];
     if (g.startDeck) return g.startDeck.slice();
-    // ランダムなデッキでも、主語と述語を3まいずつは入れる（文が作れない手札を防ぐ）
-    for (let k = 0; k < 50; k++) {
-      const d = KP.shuffle(g.pool.map(c => c.w)).slice(0, g.deckSize), cs = d.map(w => KP.card(grade, w));
-      if (cs.filter(c => c.r === "S").length >= 3 && cs.filter(c => c.r === "P").length >= 3) return d;
+    // ランダムなデッキでも、主語4まい・述語5まいは入れ、どの修飾語にも それをうけとれる述語が デッキの中に あるようにする
+    const okM = (m, ps) => ps.some(p => (m.any || p.mods.includes(m.kind)) && !(m.ngP && m.ngP.includes(p.w)));
+    for (let k = 0; k < 300; k++) {
+      const d = KP.shuffle(g.pool.map(c => c.w)).slice(0, g.deckSize), cs = d.map(w => KP.card(grade, w)), ps = cs.filter(c => c.r === "P");
+      if (cs.filter(c => c.r === "S").length >= 4 && ps.length >= 5 && cs.filter(c => c.r === "M").every(m => okM(m, ps))) return d;
     }
     return KP.shuffle(g.pool.map(c => c.w)).slice(0, g.deckSize);
   };

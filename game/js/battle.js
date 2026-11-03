@@ -22,7 +22,7 @@
     const r = R(); r.m = { pile: KP.shuffle(r.deck.slice()), disc: [], hand: [], win: 0, lose: 0 };
     KP.refill(r.grade, r.m); // 最初のドローもすぐ保存（引き直し防止）
   }
-  const lightOf = r => r.hard ? (r.d === 4 ? 4 : 3) : r.d;
+  const lightOf = r => r.hard ? (r.d === 4 ? 4 : 5) : r.d;
   const bgmOf = r => r.hard && r.d === 4 ? null : r.d < 3 ? "stage" : r.grade === "高学年" ? "boss" : "stage4";
   function setScene(cam = "center") {
     const r = R(); S3.visible = true; S3.storyMode(false); S3.showTable(true); S3.setDealer(dealerOf(r).id); S3.showDealer(true);
@@ -38,7 +38,7 @@
         const dl = dealerOf(r);
         await KP.fade(() => { setScene("center"); KP.screen("battle"); hudUpdate(); KP.bgm(bgmOf(r)); }, 700, 1100, stageName(r) + (r.hard ? "　ハード" : ""));
         if (dl.pre) { S3.showDealer(false); await KP.say("", dl.pre); S3.light(4, $("vig")); await KP.wait(500); S3.showDealer(true); }
-        else await KP.say("", r.d === nStage(r) - 1 ? "さいごの あいてだ。" : "つぎの あいてが あらわれた。");
+        else await KP.say("", r.d === nStage(r) - 1 ? "さいごの 相手が あらわれた！" : `${["{1人目|ひとりめ}", "{2人目|ふたりめ}", "{3人目|さんにんめ}", "{4人目|よにんめ}"][r.d]}の 相手が あらわれた！`);
         await KP.cutin(dl);
         S3.mood("カードを出す"); await KP.say(dl.name, dl.intro); S3.mood("基本");
         newMatch(); r.phase = "match"; save();
@@ -303,7 +303,7 @@
       const why = [];
       if (!pj.ok) why.push(`あなたの文：${pj.why[0]}。`);
       if (!dl.ok) why.push(`あいての文：${dl.why[0]}。`);
-      KP.setRb(band.querySelector(".jtx"), why.join("　") + reason);
+      band.querySelector(".jtx").innerHTML = `<span>${KP.rb(why.join("　") + reason)}</span>`;
       $("jBurst").classList.remove("on"); band.classList.remove("on");
       J.classList.add("on"); J.querySelectorAll(".jc .wd").forEach(e => KP.refit(e, 10)); KP.refit(band.querySelector(".jtx"), 13);
       let skip = false; J.onclick = () => { skip = true; };
@@ -372,7 +372,7 @@
     $("sel").classList.add("off");
     await KP.fade(() => {
       KP.screen("battle", { slide: false }); hudUpdate(); KP.bgm("story");
-      S3.visible = true; S3.storyMode(false); S3.showTable(true); S3.setDealer("shop"); S3.showDealer(true); S3.light(r.hard ? 3 : Math.max(0, r.d - 1), $("vig")); S3.camTo("center", 0);
+      S3.visible = true; S3.storyMode(false); S3.showTable(true); S3.setDealer("shop"); S3.showDealer(true); S3.light(r.hard ? 5 : Math.max(0, r.d - 1), $("vig")); S3.camTo("center", 0);
     }, 600, 500, "ショップ");
     await KP.cutin(sh);
     await KP.say(sh.name, sh.hello);
@@ -418,29 +418,36 @@
   async function clear() {
     const r = R(), dat = D(), n = nStage(r), total = r.score.reduce((a, b) => a + b, 0), rank = rankOf(total, n * 30);
     const ppl = r.hard && r.grade === "高学年" ? [...KP.DEALERS[r.grade], KP.MISE] : KP.DEALERS[r.grade];
-    await KP.fade(() => { S3.visible = false; KP.screen("result"); KP.bgm("title"); }, 600, 200);
+    await KP.fade(() => { S3.visible = false; KP.screen("result", { slide: false }); KP.bgm("title"); }, 600, 200);
+    const resEl = $("result"); resEl.classList.add("dealing"); resEl.querySelectorAll(".shown").forEach(e => e.classList.remove("shown"));
     KP.setRb($("rTitle"), r.hard ? "ハード クリア！" : "クリア！");
     const rows = $("rRows"); rows.innerHTML = ""; rows.classList.toggle("five", n === 5);
     ppl.forEach((d, i) => {
       const t = r.tries[i] > 1 ? "やり直して 勝ち" : r.score[i] === 30 ? "ストレート勝ち" : "{2勝|にしょう} {1敗|いっぱい}";
-      const e = KP.el("div", "rrow si", `<span>${KP.rb((i === 4 ? "ステージ？" : `ステージ${i + 1}`) + "　" + d.name)}</span><span>${KP.rb(t)}</span><b>${KP.rb(r.score[i] + "点")}</b>`);
+      const e = KP.el("div", "rrow", `<span>${KP.rb((i === 4 ? "ステージ？" : `ステージ${i + 1}`) + "　" + d.name)}</span><span>${KP.rb(t)}</span><b>${KP.rb(r.score[i] + "/30点")}</b>`);
       e.dataset.box = ""; rows.appendChild(e);
     });
-    const tot = KP.el("div", "rrow total si", `<span>${KP.rb(r.grade + (r.hard ? "ハード" : ""))}　${KP.rb("合計")}</span><span></span><b>${KP.rb(total + "点")}</b>`); tot.dataset.box = ""; rows.appendChild(tot);
+    const tot = KP.el("div", "rrow total", `<span>${KP.rb(r.grade + (r.hard ? "ハード" : ""))}　${KP.rb("合計")}</span><span></span><b>${KP.rb(total + "/" + n * 30 + "点")}</b>`); tot.dataset.box = ""; rows.appendChild(tot);
     $("rRank").innerHTML = `<div class="rl">ランク</div><div class="rv">${rank}</div>`;
-    KP.slideIn($("result"));
-    const notes = [], after = [];
+    // ゆっくり 1つずつ（クリック・タップで とばせる）
+    let fast = false; resEl.onpointerdown = () => { fast = true; };
+    const wt = ms => fast ? Promise.resolve() : KP.wait(ms);
+    const show = (e, s = "place") => { e.classList.add("shown"); if (!fast) KP.se(s); };
+    await wt(300); show($("rTitle"), "slide"); await wt(450);
+    for (const e of rows.children) { show(e); await wt(420); }
+    await wt(250); show($("rRank"), "bang"); await wt(600);
+    const notes = [], after = []; let unlocked = false;
     const bestKey = r.hard ? "bestHard" : "best", best = dat[bestKey][r.grade];
     if (!best || total > best.score) { dat[bestKey][r.grade] = { score: total, rank }; notes.push("ハイスコアを 記録しました！"); }
     if (!r.continued) {
       const ng = KP.NEXT_GRADE[r.grade];
       if (!r.hard) {
         const ep = KP.EP_OF_GRADE[r.grade];
-        if (ng && !dat.grades.includes(ng)) { dat.grades.push(ng); notes.push(`${ng}モードが 遊べるように なりました！`); }
+        if (ng && !dat.grades.includes(ng)) { dat.grades.push(ng); dat.gradeNew = ng; unlocked = true; notes.push(`${ng}モードが 解禁されました！`); }
         if (!dat.eps.includes(ep)) { dat.eps.push(ep); after.push(["ep", ep]); notes.push(`おはなし「${KP.EP_TITLES[ep]}」が 見られるように なりました！`); }
         if (r.grade === "高学年" && !dat.hard.length) { dat.hard.push("低学年"); dat.hardNew = true; after.push(["hard"]); }
       } else {
-        if (ng && !dat.hard.includes(ng)) { dat.hard.push(ng); notes.push(`${ng}ハードが 遊べるように なりました！`); }
+        if (ng && !dat.hard.includes(ng)) { dat.hard.push(ng); unlocked = true; notes.push(`${ng}ハードが 解禁されました！`); }
         if (r.grade === "高学年") {
           if (!dat.eps.includes(KP.HARD_EP)) { dat.eps.push(KP.HARD_EP); after.push(["ep", KP.HARD_EP]); notes.push(`おまけの おはなし「${KP.EP_TITLES[KP.HARD_EP]}」が 見られるように なりました！`); }
           if (!dat.allClear) { dat.allClear = true; after.push(["all"]); }
@@ -449,11 +456,12 @@
     } else notes.push(r.hard ? "コンティニューしたので、つぎの ハードは まだ 解禁されません。ノーコンティニューで クリアを めざそう！" : "コンティニューしたので、つぎの学年は まだ 解禁されません。ノーコンティニューで クリアを めざそう！");
     KP.setRb($("rNote"), notes.join("　")); KP.refit($("rNote"), 14);
     dat.run = null; save();
-    KP.setRb($("rOk"), after.length ? "つぎへ" : "タイトルへ");
+    show($("rNote"), unlocked ? "good" : "slide"); await wt(300);
+    KP.setRb($("rOk"), after.length ? "つぎへ" : "タイトルへ"); show($("rOk"), "slide"); resEl.onpointerdown = null; resEl.classList.remove("dealing");
     await new Promise(res => $("rOk").onclick = res);
     for (const [k, v] of after) {
       if (k === "ep") await KP.playStory(v);
-      if (k === "hard") { KP.screen(null); await KP.popup("解禁", [`<div class="big-note">ハードモードが 解禁されました！</div>学年選択の「もどる」の 右に「ハード」ボタンが 出ます。`]); }
+      if (k === "hard") { KP.screen(null); KP.se("good"); await KP.popup("解禁", [`<div class="big-note">ハードモードが 解禁されました！</div>学年選択の「もどる」の 右に「ハード」ボタンが 出ます。`]); }
       if (k === "all") { KP.screen(null); await KP.popup("おめでとう！", [`<div class="big-note">すべての モードを クリアしました！</div>あそんでくれて ありがとう！`]); }
     }
     KP.toTitle();

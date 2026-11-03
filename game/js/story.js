@@ -81,12 +81,12 @@
       ["black", N, null, "明日の 国語の 時間が、ちょっとだけ 楽しみだ。"],
     ], roll: true },
     5: { title: "第5話「ひみつの 店員」", bgm: "story", lines: [
-      ["room", MI, "shop_0", "この売店で、たくさんの 人に カードを わたしてきました。"],
-      ["room", MI, "shop_0", "でも、わたしに 勝ったのは、あなたが はじめてです。"],
-      ["room", MI, "shop_0", "黒井さんにも、校長先生にも、ナイショに しておいてくださいね。"],
-      ["room", MI, "shop_0", "……わたしが、この大会で いちばん 強いってこと。"],
-      ["room", N, "shop_0", "見瀬先さんは、いたずらっぽく わらった。"],
-      ["room", MI, "shop_0", "ことばは、使うほど 強くなります。また いつでも どうぞ。"],
+      ["room", MI, "mise_0", "この売店で、たくさんの 人に カードを わたしてきました。"],
+      ["room", MI, "mise_1", "でも、わたしに 勝ったのは、あなたが はじめてです。"],
+      ["room", MI, "mise_4", "黒井さんにも、校長先生にも、ナイショに しておいてくださいね。"],
+      ["room", MI, "mise_2", "……わたしが、この大会で いちばん 強いってこと。"],
+      ["room", N, "mise_3", "見瀬先さんは、いたずらっぽく わらった。"],
+      ["room", MI, "mise_0", "ことばは、使うほど 強くなります。また いつでも どうぞ。"],
     ] },
   };
   KP.EP_TITLES = Object.fromEntries(Object.entries(EP).map(([k, v]) => [k, v.title]));
@@ -104,33 +104,44 @@
       ev.stopPropagation(); if (skipped) return;
       if (await askSkip()) { skipped = true; KP.hideMsg(); const r = $("msg")._res; $("msg")._res = null; r && r(); }
     };
-    await KP.fade(async () => { }, 300);
-    let lastBg = null;
+    // 背景と立ち絵を先に読みこんでおく（背景が おくれて出ないように）
+    const pre = [...new Set(ep.lines.flatMap(([b, , img]) => [b === "class" ? "assets/tex/bg_classroom.jpg" : null, img ? `assets/chara/${img}.webp` : null]).filter(Boolean))];
+    await KP.fade(() => Promise.race([Promise.all(pre.map(KP.loadImg)), KP.wait(4000)]), 300);
+    let lastBg = null, curImg = null;
     for (const [b, who, img, text, se] of ep.lines) {
       if (skipped) break;
-      if (b !== lastBg && lastBg !== null && !KP.S3.lite) await KP.fade(() => showBg(b, img), 500); else showBg(b, img);
+      if (b !== lastBg && lastBg !== null && !KP.S3.lite) { await KP.fade(() => showBg(b, img, true), 500); curImg = img; }
+      else { await showBg(b, img, lastBg === null); curImg = img; }
       lastBg = b;
       if (se) KP.se(se);
       await KP.say(who, text);
     }
-    skip.style.display = "none"; bg.style.display = "none"; ch.style.display = "none"; $("vig").style.background = "";
+    skip.style.display = "none"; bg.style.display = "none"; ch.style.display = "none"; ch.classList.remove("on"); $("vig").style.background = "";
     KP.S3._cur = null; KP.hideMsg(); KP.S3.storyMode(false);
     if (ep.roll) await KP.staffRoll(true);
 
-    function showBg(b, img) {
+    // 人物は パッと出さずに フェードイン、いなくなるときは フェードアウト（同じ人の表情がわりは そのまま）
+    async function showBg(b, img, instant) {
+      const idOf = s => s ? s.split("_")[0] : null, sameWho = idOf(img) === idOf(curImg);
       if (b === "3d" || b === "room") {
         bg.style.display = "none"; ch.style.display = "none"; KP.S3.visible = true;
         KP.S3.showTable(b === "3d"); KP.S3.storyMode(true); KP.S3.light(n === 4 ? 3 : 1, $("vig")); KP.S3.camTo(b === "3d" ? "center" : "story", 0);
         if (img) {
           const [id, pose] = img.split("_");
+          if (!sameWho && !instant && KP.S3._cur) await KP.S3.fadeDealer(false);
           if (KP.S3._cur !== id) { KP.S3.setDealer(id); KP.S3._cur = id; }
-          KP.S3.showDealer(true); KP.S3.mood(["基本", "思考", "カードを出す", "嬉しい", "悔しい"][+pose]);
-        } else { KP.S3.showDealer(false); }
+          KP.S3.mood(["基本", "思考", "カードを出す", "嬉しい", "悔しい"][+pose]);
+          if (!sameWho || instant) { if (instant) KP.S3.showDealer(true); else await KP.S3.fadeDealer(true); }
+        } else if (!instant && KP.S3._cur) { await KP.S3.fadeDealer(false); KP.S3._cur = null; } else KP.S3.showDealer(false);
       } else {
         KP.S3.visible = false; bg.style.display = "block";
-        if (b === "class") bg.src = KP.asset("assets/tex/bg_classroom.jpg"); else bg.removeAttribute("src");
+        bg.src = b === "class" ? KP.asset("assets/tex/bg_classroom.jpg") : KP.BLANK;
         bg.style.background = "#000";
-        if (img && b === "class") { ch.src = KP.asset(`assets/chara/${img}.webp`); ch.style.display = "block"; } else ch.style.display = "none";
+        const want = img && b === "class" ? img : null;
+        if (!want) { if (ch.classList.contains("on") && !instant) { ch.classList.remove("on"); await KP.wait(300); } ch.classList.remove("on"); ch.style.display = "none"; return; }
+        if (!sameWho && ch.classList.contains("on") && !instant) { ch.classList.remove("on"); await KP.wait(300); }
+        ch.src = KP.asset(`assets/chara/${want}.webp`); ch.style.display = "block";
+        if (!ch.classList.contains("on")) { void ch.offsetWidth; ch.classList.add("on"); }
       }
     }
   };

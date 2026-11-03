@@ -4,7 +4,7 @@
   KP.COLOR = { S: ["#d7141f", "#fff"], M: ["#f2b705", "#111"], P: ["#1e4fd8", "#fff"], N: ["#3dd27a", "#111"] };
   const POSE = { 基本: 0, 思考: 1, カードを出す: 2, 嬉しい: 3, 悔しい: 4 };
   const S3 = KP.S3 = {};
-  let renderer, scene, cam, lamp, amb, dealer, table, room, roomMats = [], tableMats = [], moods = {}, cards = [];
+  let bulbMat, renderer, scene, cam, lamp, amb, dealer, table, room, roomMats = [], tableMats = [], moods = {}, cards = [];
   const anims = [];
   const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   S3.tween = (ms, fn) => new Promise(res => { if (S3.lite && ms > 0) ms = Math.min(ms, 250); anims.push({ t0: performance.now(), ms: Math.max(1, ms), fn, res }); });
@@ -30,7 +30,8 @@
     lamp = new THREE.PointLight(0xffd59a, 1.6, 8); lamp.position.set(0, 2.6, -.3); scene.add(lamp);
     const shade = new THREE.Mesh(new THREE.ConeGeometry(.35, .25, 24, 1, true), new THREE.MeshStandardMaterial({ color: 0x2a2418, side: THREE.DoubleSide }));
     shade.position.set(0, 2.95, -.3); scene.add(shade);
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(.07, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffe8b0 })); bulb.position.set(0, 2.82, -.3); scene.add(bulb);
+    bulbMat = new THREE.MeshBasicMaterial({ color: 0xffe8b0 });
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(.07, 16, 12), bulbMat); bulb.position.set(0, 2.82, -.3); scene.add(bulb);
     // 教室：横6×奥行き7×高さ3.375（画像の16:9に合わせる）
     const RW = 6, RD = 7, RH = 3.375, Z0 = -4, Z1 = Z0 + RD;
     const board = (f, w, h, rx, ry) => new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex(f, rx, ry) }));
@@ -72,12 +73,19 @@
   S3.setDealer = function (id) {
     moods = {}; dealer.visible = !!id; if (!id) return;
     if (id === "shop") { moods.基本 = loader().load(KP.asset("assets/chara/shop_0.webp")); dealer.userData.yy = -.04; }
+    else if (id === "mise") { Object.entries(POSE).forEach(([m, k]) => { moods[m] = loader().load(KP.asset(`assets/chara/mise_${k}.webp`)); }); dealer.userData.yy = -.04; }
     else { Object.entries(POSE).forEach(([m, k]) => { moods[m] = loader().load(KP.asset(`assets/chara/${id}_${k}.webp`)); }); dealer.userData.yy = 0; }
     S3.mood("基本");
   };
   S3.mood = m => { const t = moods[m] || moods.基本; if (!t) return; dealer.material.map = t; dealer.material.needsUpdate = true; };
   S3.showTable = v => { table.visible = v; };
-  S3.showDealer = v => { dealer.visible = v; };
+  S3.showDealer = v => { dealer.visible = v; dealer.material.opacity = 1; };
+  // 人物の登場・退場：フェードイン／フェードアウト
+  S3.fadeDealer = async (show, ms = 350) => {
+    const m = dealer.material;
+    if (show) { m.opacity = 0; dealer.visible = true; await S3.tween(ms, t => { m.opacity = t; }); }
+    else if (dealer.visible) { const o = m.opacity; await S3.tween(ms, t => { m.opacity = o * (1 - t); }); dealer.visible = false; m.opacity = 1; }
+  };
   // おはなし：ポーカー台なしで、ひざ下を文字ウインドウでかくす位置に立たせる
   S3.storyY = .12; S3.storyMode = v => { S3.story = !!v; };
   // あいての顔が画面のどこにあるか（点数パネルを顔にかぶせないため）
@@ -92,14 +100,15 @@
     { tint: [1, .82, .66], amb: .5, lamp: 1.6, vig: "rgba(60,20,0,.35)" },
     { tint: [.45, .52, .75], amb: .35, lamp: 1.8, vig: "rgba(0,0,20,.6)" },
     { tint: [.75, .3, .32], amb: .3, lamp: 2.2, vig: "rgba(30,0,0,.7)" },
-    { tint: [.32, .1, .14], amb: .15, lamp: .9, vig: "rgba(0,0,0,.92)" }, // ステージ？：あかりが きえた教室
+    { tint: [.3, .4, .3], amb: .16, lamp: .75, vig: "rgba(0,8,0,.88)", flick: true }, // 4 ステージ？：あかりが きえかけた教室
+    { tint: [.55, .7, .52], amb: .3, lamp: 1.05, vig: "rgba(0,18,4,.62)", flick: true }, // 5 ハード：うす暗く緑っぽい。電球がときどきチカチカ
   ];
   S3.light = function (i, vigEl) {
     const L = LIGHTS[i];
     roomMats.forEach(m => m.color.setRGB(...L.tint));
     dealer.material.color.setRGB(...L.tint.map(v => .5 + v * .5));
     tableMats.forEach(m => m.color.setRGB(...L.tint.map(v => .4 + v * .6)));
-    amb.intensity = L.amb; lamp.intensity = L.lamp;
+    amb.intensity = L.amb; lamp.intensity = L.lamp; S3.lampBase = L.lamp; S3.flick = !!L.flick; lamp.color.setHex(L.flick ? 0xd8ffc0 : 0xffd59a); if (bulbMat) bulbMat.color.setHex(L.flick ? 0xe8ffd0 : 0xffe8b0); S3._fl = null;
     if (vigEl) vigEl.style.background = `radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0) 35%, ${L.vig} 100%)`;
   };
 
@@ -194,6 +203,11 @@
     if (S3.lite && now - last < 32) return; last = now;
     for (let i = anims.length - 1; i >= 0; i--) { const a = anims[i], t = Math.min(1, (now - a.t0) / a.ms); a.fn(t); if (t >= 1) { anims.splice(i, 1); a.res(); } }
     tt += .016;
+    // ハード：電球がときどきチカチカする
+    if (S3.flick && !S3.lite) {
+      if (!S3._fl && Math.random() < .006) S3._fl = { t0: now, ms: 250 + Math.random() * 450 };
+      if (S3._fl) { const f = S3._fl, p = (now - f.t0) / f.ms; lamp.intensity = S3.lampBase * (p >= 1 ? 1 : Math.random() < .5 ? .08 : .6 + Math.random() * .5); bulbMat.color.setHex(lamp.intensity < .3 ? 0x333322 : 0xe8ffd0); if (p >= 1) S3._fl = null; }
+    }
     // 立ち絵は ゆっくり上下に ふわっと浮く
     dealer.position.y = dealer.userData.y0 + (dealer.userData.yy || 0) + Math.sin(tt * 1.1) * .035 + (S3.story ? S3.storyY : 0);
     // 手持ちカメラ風のゆれ（カード選択中は大きめ）＋止まる瞬間のゆれ

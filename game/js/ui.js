@@ -2,13 +2,15 @@
 (function (KP) {
   const $ = KP.$ = id => document.getElementById(id);
   KP.wait = ms => new Promise(r => setTimeout(r, KP.S3 && KP.S3.lite ? Math.min(ms, 200) : ms));
+  KP.BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+  KP.loadImg = p => new Promise(r => { const i = new Image(); i.onload = i.onerror = () => r(); i.src = KP.asset(p); });
   KP.el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 
   // 舞台（1366×768）を画面に合わせる
   KP.fitStage = function () {
     const w = window.innerWidth, h = window.innerHeight, s = Math.min(w / 1366, h / 768), st = $("stage");
     st.style.transform = `scale(${s})`; st.style.left = (w - 1366 * s) / 2 + "px"; st.style.top = (h - 768 * s) / 2 + "px";
-    KP.scale = s; if (KP.S3.resize) KP.S3.resize(1366 * s, 768 * s);
+    KP.scale = s; if (KP.S3.resize) KP.S3.resize(1366 * s, 768 * s); if (KP.T3) KP.T3.resize();
   };
   // はみだす文字は小さくする
   KP.fit = function (e, min = 12) {
@@ -20,6 +22,7 @@
   // 画面の切りかえ：UIを時間差でスライドインさせる（画面をひらいたときの1回だけ）
   KP.screen = function (id, opt = {}) {
     document.querySelectorAll(".scr").forEach(s => s.classList.toggle("on", s.id === id));
+    if (id !== "scr-title" && KP.T3) KP.T3.stop();
     if (id && opt.slide !== false) KP.slideIn($(id));
   };
   KP.slideIn = function (root) {
@@ -53,13 +56,16 @@
 
   // ---- 文字ウインドウ（ふりがなつき・1文字ずつポンと出る） ----
   let resolveMsg = null, typing = null;
+  // 「主語」は赤、「述語」は青、「修飾語」は黄（カードと同じ色）
+  const TERM = { 主語: "kS", 述語: "kP", 修飾語: "kM" };
+  const termHTML = k => TERM[k.t] ? `<span class="${TERM[k.t]}">${KP.tokHTML(k)}</span>` : KP.tokHTML(k);
   function typeInto(t, text, speed, done) {
-    const toks = KP.rbTokens(text); t.innerHTML = KP.rb(text); KP.fit(t, 16); t.innerHTML = "";
+    const toks = KP.rbTokens(text), full = toks.map(termHTML).join(""); t.innerHTML = full; KP.fit(t, 16); t.innerHTML = "";
     let i = 0; clearInterval(typing);
-    const finish = () => { clearInterval(typing); typing = null; t.innerHTML = KP.rb(text); done && done(); };
+    const finish = () => { clearInterval(typing); typing = null; t.innerHTML = full; done && done(); };
     if (KP.S3.lite) { finish(); return finish; }
     typing = setInterval(() => {
-      for (let k = 0; k < 2 && i < toks.length; k++, i++) { const sp = KP.el("span", "tc", KP.tokHTML(toks[i])); t.appendChild(sp); }
+      for (let k = 0; k < 2 && i < toks.length; k++, i++) { const sp = KP.el("span", "tc", termHTML(toks[i])); t.appendChild(sp); }
       if (i >= toks.length) finish();
     }, speed);
     return finish;
@@ -122,7 +128,7 @@
           (opt.buttons || [opt.last || "とじる"]).forEach((t, i) => btn(t, () => close(i), i === 0 ? "red" : ""));
         }
         foot.querySelectorAll(".pbtn").forEach(b => KP.fit(b, 14));
-        if (first) { box.classList.remove("pin"); void box.offsetWidth; box.classList.add("pin"); KP.slideIn(foot); }
+        if (first) { box.classList.remove("pin"); void box.offsetWidth; box.classList.add("pin"); clearTimeout(box._pt); box._pt = setTimeout(() => box.classList.remove("pin"), 340); KP.slideIn(foot); }
       };
       const close = (i = 0) => { pop.classList.remove("on"); res(i); };
       pop.classList.add("on"); render(true);
@@ -162,9 +168,14 @@
       const role = $("ciRole");
       if (d.hideRole) { role.textContent = "？？？"; setTimeout(() => { KP.setRb(role, d.role); role.classList.remove("flip"); void role.offsetWidth; role.classList.add("flip"); }, 1300); }
       else KP.setRb(role, d.role);
-      c.classList.remove("on"); void c.offsetWidth; c.classList.add("on"); KP.se("slide");
-      let done = false; const fin = () => { if (done) return; done = true; c.classList.remove("on"); res(); };
-      c.onclick = fin; setTimeout(fin, KP.S3.lite ? 1100 : (d.hideRole ? 2800 : 2300));
+      c.classList.remove("on", "out"); void c.offsetWidth; c.classList.add("on"); KP.se("slide");
+      // 長めに見せる（クリック・タップで とばせる）。さいごは 帯が切れるように 走りさって フラッシュ
+      let done = false; const fin = async () => {
+        if (done) return; done = true; clearTimeout(tm);
+        if (!KP.S3.lite) { c.classList.add("out"); KP.se("slide", 1.3); await new Promise(r => setTimeout(r, 420)); }
+        c.classList.remove("on", "out"); res();
+      };
+      c.onclick = fin; const tm = setTimeout(fin, KP.S3.lite ? 1100 : (d.hideRole ? 4300 : 3600));
     });
   };
 })(window.KP);

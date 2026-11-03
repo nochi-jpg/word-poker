@@ -44,7 +44,8 @@ button{font-family:inherit;font-weight:900;color:inherit;cursor:pointer;backgrou
 .ticker{position:absolute;left:0;white-space:nowrap;font-family:"KPDela",sans-serif;font-size:120px;line-height:130px;color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.08);animation:tick 30s linear infinite;pointer-events:none}
 .ticker.b{animation-direction:reverse;-webkit-text-stroke-color:rgba(215,20,31,.25)}
 @keyframes tick{to{transform:translateX(-50%)}}
-#sil{position:absolute;left:560px;top:30px;width:560px;height:760px;pointer-events:none}
+#tcards{position:absolute;left:0;top:0;width:1366px;height:768px;pointer-events:none}
+#sil{display:none}
 #sil .ln{position:absolute;left:-200px;right:-200px;height:6px;background:#fff;opacity:0;transform:skewY(-8deg)}
 #silImg{position:absolute;left:80px;top:0;height:880px;filter:brightness(0) drop-shadow(6px 0 0 #d7141f) drop-shadow(-3px 0 0 #fff);opacity:0}
 #sil.in #silImg{animation:silIn 10s cubic-bezier(.2,.9,.2,1) both}
@@ -65,9 +66,8 @@ button{font-family:inherit;font-weight:900;color:inherit;cursor:pointer;backgrou
 .mb:hover::before{transform:none}
 .mb:hover{animation:mshake .3s;box-shadow:7px 7px 0 #fff}
 .mb:active{transform:skewX(-14deg) translate(4px,4px) scale(.97);box-shadow:2px 2px 0 #fff}
-#scr-title.in .mb{animation:mIn .45s cubic-bezier(.2,1.3,.4,1) both}
-#scr-title.in .mb:nth-child(1){animation-delay:.35s}#scr-title.in .mb:nth-child(2){animation-delay:.42s}#scr-title.in .mb:nth-child(3){animation-delay:.49s}#scr-title.in .mb:nth-child(4){animation-delay:.56s}#scr-title.in .mb:nth-child(5){animation-delay:.63s}
-#scr-title.in .mb:hover{animation:mshake .3s}
+#menu.intro .mb{animation:mIn .45s cubic-bezier(.2,1.3,.4,1) both;pointer-events:none}
+#menu.intro .mb:nth-child(1){animation-delay:.35s}#menu.intro .mb:nth-child(2){animation-delay:.42s}#menu.intro .mb:nth-child(3){animation-delay:.49s}#menu.intro .mb:nth-child(4){animation-delay:.56s}#menu.intro .mb:nth-child(5){animation-delay:.63s}
 @keyframes mIn{from{transform:skewX(-14deg) translateX(520px);opacity:0}to{transform:skewX(-14deg);opacity:1}}
 @keyframes mshake{0%,100%{transform:skewX(-14deg)}25%{transform:skewX(-14deg) translateX(-6px) rotate(-1deg)}75%{transform:skewX(-14deg) translateX(5px) rotate(1deg)}}
 #sign{position:absolute;left:40px;top:716px;width:300px;height:32px;line-height:32px;color:#fff;font-size:16px;opacity:.8}
@@ -174,7 +174,7 @@ button{font-family:inherit;font-weight:900;color:inherit;cursor:pointer;backgrou
 #rRank{position:absolute;left:880px;top:222px;width:340px;height:310px;background:#fff;border:6px solid #111;box-shadow:12px 12px 0 #111;transform:rotate(4deg);display:flex;flex-direction:column;align-items:center;justify-content:center}
 #rRank .rl{font-size:26px;height:40px;line-height:40px}
 #rRank .rv{font-family:"KPDela",sans-serif;font-weight:400;font-size:170px;height:220px;line-height:220px;color:#d7141f}
-#rNote{position:absolute;left:100px;top:572px;width:1120px;height:72px;color:#fff;font-size:22px;line-height:36px;overflow:hidden}
+#rNote{position:absolute;left:100px;top:566px;width:1120px;height:90px;color:#fff;font-size:22px;line-height:44px;overflow:hidden}
 #rOk{position:absolute;left:1082px;top:672px;width:240px}
 
 /* カットイン */
@@ -376,3 +376,59 @@ rt{font-family:"KPMaru",sans-serif;font-weight:900;font-size:.42em;line-height:1
 @keyframes rside{0%{opacity:0;translate:0 40px}15%,80%{opacity:1;translate:0 0}100%{opacity:0;translate:0 -20px}}
 #skipBtn{z-index:70}
 .hud.btn{line-height:48px}
+
+/* ---- 11/3 追加 ---- */
+#mText .kS{color:#ff4a54}#mText .kP{color:#6f9bff}#mText .kM{color:#ffd23a}
+#chara2d{opacity:0;transition:opacity .3s ease}
+#chara2d.on{opacity:1}
+/* 着地するまで（スライドイン中・配っている途中・ポップアップが出てくる途中）は マウスやタップに反応しない */
+.si.sin,.hcard.new,#popBox.pin,#popBox.pin *,#spCards .hcard.new,.rrow.sin,.brow.sin{pointer-events:none!important}
+/* タッチ（マウスがない端末）では、のせたときの見た目が のこらないように。反応は タップ（押した瞬間）で同じにする */
+@media (hover:none){
+ .pbtn:hover:not(:disabled),.hud.btn:hover,.gcard:hover,.scard.full:hover,.hcard:hover,.mb:hover,.epb:hover,#msg:hover #mBody{animation:none!important}
+ .pbtn:hover:not(:disabled){background:#fff;color:#111;box-shadow:6px 6px 0 #111;transform:skewX(-12deg)}
+ .pbtn.red:hover:not(:disabled){background:#d7141f;color:#fff;box-shadow:6px 6px 0 #fff}
+ .mb:hover::before{transform:translateX(-102%)}
+ .mb:hover{box-shadow:7px 7px 0 #d7141f}
+ .hud.btn:hover{background:#111;color:#fff}
+ .hcard:hover:not(.used){transform:rotate(var(--rot,0deg))!important}
+}
+#mName{height:46px!important;line-height:56px!important;padding-top:0;overflow:hidden}
+#spot{--sx:400px;--sy:704px;background:radial-gradient(ellipse 200px 90px at var(--sx) var(--sy),rgba(0,0,0,0) 60%,rgba(0,0,0,.82) 100%)}
+#spot.big{background:radial-gradient(ellipse 240px 260px at var(--sx) var(--sy),rgba(0,0,0,0) 62%,rgba(0,0,0,.82) 100%)}
+.gcard.lit{z-index:6;animation:litc .6s ease-in-out infinite alternate}
+@keyframes litc{from{filter:brightness(1)}to{filter:brightness(1.15) drop-shadow(0 0 24px #fff)}}
+.gcard .glock{display:block;padding:0}
+.gcard .glock p{margin:0;width:100%;text-align:center;line-height:1.75;font-size:19px;white-space:nowrap}
+.gcard .glock{display:flex}
+.brow.sin{animation:brIn .32s var(--d,0ms) cubic-bezier(.2,1.3,.4,1) both}
+#popBody .brow{animation-fill-mode:both}
+@keyframes brIn{from{translate:-260px 0;opacity:0}to{translate:0 0;opacity:1}}
+#popBody .brow.sin{animation:brIn .32s cubic-bezier(.2,1.3,.4,1) both;animation-delay:inherit}
+#dbgHa{cursor:default}
+/* カットインの退場 */
+#cutin.out .ci-band,#cutin.out .ci-band2,#cutin.out .ci-foot{animation:ciOut .38s cubic-bezier(.6,0,.8,.4) both!important}
+#cutin.out .ci-band2{animation-delay:.04s!important}
+#cutin.out #ciImg{animation:ciImgOut .38s cubic-bezier(.6,0,.8,.4) both!important}
+#cutin.out #ciText{animation:ciTxtOut .3s cubic-bezier(.6,0,.8,.4) both!important}
+#cutin.out::after{content:"";position:absolute;inset:0;background:#fff;animation:ciFlash .42s ease-out both;pointer-events:none}
+@keyframes ciOut{from{transform:rotate(-6deg) translateX(0)}to{transform:rotate(-6deg) translateX(-1900px)}}
+@keyframes ciImgOut{from{transform:none;opacity:1}to{transform:translateX(700px) skewX(-14deg);opacity:0}}
+@keyframes ciTxtOut{from{transform:none;opacity:1}to{transform:translateX(-600px) skewX(14deg);opacity:0}}
+@keyframes ciFlash{0%,55%{opacity:0}70%{opacity:.7}100%{opacity:0}}
+/* リザルト：1つずつ出す。一度出したものは 消さない */
+#result.dealing #rTitle:not(.shown),#result.dealing .rrow:not(.shown),#result.dealing #rRank:not(.shown),#result.dealing #rNote:not(.shown),#result.dealing #rOk:not(.shown){opacity:0;pointer-events:none}
+#result .rrow.shown{animation:rrIn .3s cubic-bezier(.2,1.3,.4,1) both}
+#rTitle.shown{animation:rrIn .35s cubic-bezier(.2,1.3,.4,1) both}
+#rRank.shown{animation:rkIn .45s cubic-bezier(.2,1.7,.4,1) both}
+#rNote.shown,#rOk.shown{animation:rrIn .3s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes rrIn{from{translate:-320px 0;opacity:0}to{translate:0 0;opacity:1}}
+@keyframes rkIn{from{scale:2.6;rotate:-20deg;opacity:0}to{scale:1;rotate:0deg;opacity:1}}
+#rRows.five{gap:6px}
+#rRows.five .rrow{height:46px;line-height:46px}
+/* 成立！の吹き出し：文字を まん中に */
+#jBurst{justify-content:center;padding-top:6px}
+.jbt{margin-bottom:0!important;height:70px!important;line-height:76px!important;font-size:44px!important}
+.jbs{margin-top:-2px}
+/* 判定の帯：1行のときは 上下まん中 */
+#jBand .jtx{line-height:1.5!important;height:58px!important;display:flex;align-items:center;padding-top:9px}
