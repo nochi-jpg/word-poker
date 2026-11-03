@@ -4,7 +4,7 @@
   KP.COLOR = { S: ["#d7141f", "#fff"], M: ["#f2b705", "#111"], P: ["#1e4fd8", "#fff"], N: ["#3dd27a", "#111"] };
   const POSE = { 基本: 0, 思考: 1, カードを出す: 2, 嬉しい: 3, 悔しい: 4 };
   const S3 = KP.S3 = {};
-  let bulbMat, renderer, scene, cam, lamp, amb, dealer, table, room, roomMats = [], tableMats = [], moods = {}, cards = [];
+  let spot, spotMat, bulbMat, renderer, scene, cam, lamp, amb, dealer, table, room, roomMats = [], tableMats = [], moods = {}, cards = [];
   const anims = [];
   const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   S3.tween = (ms, fn) => new Promise(res => { if (S3.lite && ms > 0) ms = Math.min(ms, 250); anims.push({ t0: performance.now(), ms: Math.max(1, ms), fn, res }); });
@@ -15,6 +15,11 @@
     return t;
   }
 
+  function glowTex() {
+    const cv = document.createElement("canvas"); cv.width = cv.height = 128; const g = cv.getContext("2d");
+    const gr = g.createRadialGradient(64, 64, 4, 64, 64, 64); gr.addColorStop(0, "rgba(255,240,200,.75)"); gr.addColorStop(1, "rgba(255,240,200,0)");
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(cv);
+  }
   function shadowTex() {
     const cv = document.createElement("canvas"); cv.width = cv.height = 128; const g = cv.getContext("2d");
     const gr = g.createRadialGradient(64, 64, 8, 64, 64, 64); gr.addColorStop(0, "rgba(0,0,0,.95)"); gr.addColorStop(.6, "rgba(0,0,0,.75)"); gr.addColorStop(1, "rgba(0,0,0,0)");
@@ -43,6 +48,15 @@
     const left = board("door", RD, RH); left.rotation.y = Math.PI / 2; left.position.set(-RW / 2, RH / 2, (Z0 + Z1) / 2); room.add(left);
     const right = board("wall", RD, RH); right.rotation.y = -Math.PI / 2; right.position.set(RW / 2, RH / 2, (Z0 + Z1) / 2); room.add(right);
     roomMats = room.children.map(m => m.material);
+    // スポットライト（あいてを 上から照らす 光のすじ＋床の明るい円）
+    spotMat = new THREE.MeshBasicMaterial({ color: 0xfff1cc, transparent: true, opacity: .13, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    spot = new THREE.Group();
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(.95, 3.3, 32, 1, true), spotMat); cone.position.set(0, 1.62, -1.25); spot.add(cone);
+    const pool = new THREE.Mesh(new THREE.CircleGeometry(1, 40), new THREE.MeshBasicMaterial({ map: glowTex(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+    pool.rotation.x = -Math.PI / 2; pool.position.set(0, .012, -1.25); spot.add(pool);
+    const halo = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.6), new THREE.MeshBasicMaterial({ map: glowTex(), transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false }));
+    halo.position.set(0, 1.25, -1.6); spot.add(halo);
+    spot.visible = false; scene.add(spot);
     // ポーカー台
     table = new THREE.Group(); scene.add(table);
     const feltMat = new THREE.MeshStandardMaterial({ map: tex("felt", 2.2, 1), roughness: .95 });
@@ -102,6 +116,8 @@
     { tint: [.75, .3, .32], amb: .3, lamp: 2.2, vig: "rgba(30,0,0,.7)" },
     { tint: [.3, .4, .3], amb: .16, lamp: .75, vig: "rgba(0,8,0,.88)" }, // 4 ステージ？：あかりが きえかけた教室
     { tint: [.55, .7, .52], amb: .3, lamp: 1.05, vig: "rgba(0,18,4,.62)" }, // 5 ハード：うす暗く緑っぽい（チカチカは 11/3 なしに決定）
+    { tint: [.15, .14, .2], amb: .08, lamp: .3, vig: "rgba(0,0,0,.82)", spot: true }, // 6 黒井戦：部屋を かなり暗くして スポットライト
+    { tint: [.7, .16, .2], amb: .14, lamp: .4, vig: "rgba(0,0,0,.6)", spot: true, cycle: [[.75, .14, .18], [.16, .28, .85], [.85, .72, .16]] }, // 7 見瀬先戦：赤→青→黄 10秒ずつ
   ];
   // 平均40秒（いままでの 15分の1の回数）
   const flickWait = () => 12000 + Math.random() * 56000;
@@ -119,7 +135,8 @@
   S3.light = function (i, vigEl) {
     const L = LIGHTS[i]; S3._L = L; S3._vigEl = vigEl; KP.$("stage").classList.remove("flickDark"); if (vigEl) vigEl.style.opacity = "";
     roomMats.forEach(m => m.color.setRGB(...L.tint));
-    dealer.material.color.setRGB(...L.tint.map(v => .5 + v * .5));
+    dealer.material.color.setRGB(...(L.spot ? [1, 1, 1] : L.tint.map(v => .5 + v * .5)));
+    spot.visible = !!L.spot; S3._cycle0 = performance.now();
     tableMats.forEach(m => m.color.setRGB(...L.tint.map(v => .4 + v * .6)));
     amb.intensity = L.amb; lamp.intensity = L.lamp; S3.lampBase = L.lamp; S3.flick = !!L.flick; lamp.color.setHex(L.flick ? 0xd8ffc0 : 0xffd59a); if (bulbMat) bulbMat.color.setHex(L.flick ? 0xe8ffd0 : 0xffe8b0); S3._fl = null; S3._nextFl = performance.now() + flickWait();
     if (vigEl) vigEl.style.background = `radial-gradient(ellipse at 50% 40%, rgba(0,0,0,0) 35%, ${L.vig} 100%)`;
@@ -216,6 +233,15 @@
     if (S3.lite && now - last < 32) return; last = now;
     for (let i = anims.length - 1; i >= 0; i--) { const a = anims[i], t = Math.min(1, (now - a.t0) / a.ms); a.fn(t); if (t >= 1) { anims.splice(i, 1); a.res(); } }
     tt += .016;
+    // 見瀬先戦：部屋の色が 赤→青→黄（10秒ずつ。1秒かけて まざる）。スポットライトは あてたまま
+    const L = S3._L;
+    if (L && L.cycle) {
+      const t = Math.max(0, now - S3._cycle0) / 10000, i = Math.floor(t) % 3, f = Math.min(1, (t - Math.floor(t)) * 10), a = L.cycle[(i + 2) % 3], b = L.cycle[i];
+      const c = a.map((v, k) => v + (b[k] - v) * f);
+      roomMats.forEach(m => m.color.setRGB(...c)); tableMats.forEach(m => m.color.setRGB(...c.map(v => .35 + v * .65)));
+      spotMat.color.setRGB(...c.map(v => .7 + v * .3));
+    }
+    if (spot.visible) spotMat.opacity = .13 + Math.sin(tt * 2) * .015;
     // ハード：ときどき 部屋全体（背景・机・立ち絵）が チカチカする（平均 40秒に1回）
     if (S3.flick && !S3.lite) {
       if (!S3._fl && now > (S3._nextFl || 0)) S3._fl = { t0: now, ms: 300 + Math.random() * 500, k: 1, last: 0 };

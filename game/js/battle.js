@@ -22,8 +22,9 @@
     const r = R(), g = G(); r.m = { pile: KP.shuffle(r.deck.slice()), disc: [], hand: [], win: 0, lose: 0, size: r.hard && g.hardHand ? g.hardHand : g.hand };
     KP.refill(r.grade, r.m); // 最初のドローもすぐ保存（引き直し防止）
   }
-  const lightOf = r => r.hard ? (r.d === 4 ? 4 : 5) : r.d;
-  const bgmOf = r => r.hard && r.d === 4 ? null : r.d < 3 ? "stage" : r.grade === "高学年" ? "boss" : "stage4";
+  // 照明：高学年ステージ4（黒井）＝暗い部屋にスポットライト、ステージ？（見瀬先）＝赤→青→黄＋スポットライト
+  const lightOf = r => r.hard && r.d === 4 ? 7 : r.grade === "高学年" && r.d === 3 ? 6 : r.hard ? 5 : r.d;
+  const bgmOf = r => r.hard && r.d === 4 ? "mise" : r.d < 3 ? (r.hard ? "hard" : "normal") : r.grade === "高学年" ? "boss" : "stage4";
   function setScene(cam = "center") {
     const r = R(); S3.visible = true; S3.storyMode(false); S3.showTable(true); S3.setDealer(dealerOf(r).id); S3.showDealer(true);
     S3.light(lightOf(r), $("vig")); S3.camTo(cam, 0);
@@ -36,8 +37,17 @@
       if (r.phase === "intro") {
         $("sel").classList.add("off");
         const dl = dealerOf(r);
-        await KP.fade(() => { setScene("center"); KP.screen("battle"); hudUpdate(); KP.bgm(bgmOf(r)); }, 700, 1100, stageName(r) + (r.hard ? "　ハード" : ""));
-        if (dl.pre) { S3.showDealer(false); await KP.say("", dl.pre); S3.light(4, $("vig")); await KP.wait(500); S3.showDealer(true); }
+        // ステージ？：暗転が明けても まだ だれもいない。あかりが消えて…スポットライトが ついて 登場
+        await KP.fade(() => {
+          setScene("center"); KP.screen("battle"); hudUpdate();
+          if (dl.pre) { S3.showDealer(false); S3.light(4, $("vig")); KP.bgm(null); } else KP.bgm(bgmOf(r));
+        }, 700, 1100, stageName(r) + (r.hard ? "　ハード" : ""));
+        if (dl.pre) {
+          await KP.say("", dl.pre);
+          KP.hideMsg(); await KP.wait(600);
+          S3.light(lightOf(r), $("vig")); KP.se("bang"); await KP.wait(450);
+          KP.bgm(bgmOf(r)); S3.mood("カードを出す"); await S3.fadeDealer(true, 900); await KP.wait(300);
+        }
         else await KP.say("", r.d === nStage(r) - 1 ? "さいごの 相手が あらわれた！" : `${["{1人目|ひとりめ}", "{2人目|ふたりめ}", "{3人目|さんにんめ}", "{4人目|よにんめ}"][r.d]}の 相手が あらわれた！`);
         await KP.cutin(dl);
         S3.mood("カードを出す"); await KP.say(dl.name, dl.intro); S3.mood("基本");

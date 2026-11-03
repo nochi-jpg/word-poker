@@ -167,7 +167,7 @@
   KP.staffRoll = function (ending) {
     return new Promise(async res => {
       const $ = KP.$, box = $("roll"), inner = $("rollIn"), skip = $("skipBtn");
-      KP.S3.visible = false; KP.screen(null); KP.bgm("ending");
+      KP.S3.visible = false; KP.screen(null); KP.bgm("credit");
       inner.innerHTML = "";
       const ppl = [];
       for (const [t, v] of ROLL()) {

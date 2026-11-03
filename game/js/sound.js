@@ -1,6 +1,6 @@
 // ことばポーカー：BGM・効果音（音量はオプションの1つでまとめて調整）
 (function (KP) {
-  const BGM = { title: "bgm_title", story: "bgm_story", stage: "bgm_stage", stage4: "bgm_stage4", boss: "bgm_boss", ending: "bgm_ending" };
+  const BGM = { title: "bgm_title", story: "bgm_story", normal: "bgm_normal", hard: "bgm_hard", stage4: "bgm_stage4", boss: "bgm_boss", ending: "bgm_ending", credit: "bgm_credit", mise: "bgm_mise" };
   const SE = { chime: "se_chime", bang: "se_bang", ok: "se_ok", ko: "se_ko", cursor: "se_cursor", flip: "se_flip", slide: "se_slide",
     ng: "se_ng", shop: "se_shop", place: "se_place", good: "se_good" };
   const src = f => KP.asset(`assets/sound/${f}.mp3`);

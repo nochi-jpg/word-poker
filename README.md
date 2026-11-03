@@ -7,6 +7,10 @@
 - 動作環境の基準：勤務校の Lenovo 11.6型（Windows・Edge）。スマホは横画面で動けばよい
 - 作者：K.nom
 
+## 遊ぶ（GitHub Pages）
+
+https://nochi-jpg.github.io/word-poker/ （main ブランチ。トップの index.html から game/ にとぶ）
+
 ## 仕様書
 
 仕様はClaude Docsのドキュメントにまとめてある（ルール・学年別の数値・ディーラーの行動・ストーリー・セーブ・登場人物）。
